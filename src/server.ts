@@ -34,7 +34,7 @@ const env = process.env.NODE_ENV
 const port = process.env.PORT
 
 app.use(express.json())
-app.use(cookieParser(cookieOptions))
+app.use(cookieParser(process.env.SESSION_SECRET!))
 app.use(cors(corsOptions))
 app.use("/login", (
   session(sessionOptions)

@@ -4,6 +4,7 @@ import session from 'express-session'
 import BetterSQLite3 from 'better-sqlite3'
 import BetterSQLite3SessionStore from 'better-sqlite3-session-store'
 import { SessionData } from '../utils/types/express-session'
+import { cookieOptions } from './cookieOptions'
 
 type SessionStoreOptions = {
   client: any,
@@ -52,14 +53,21 @@ export const sessionOptions: SessionOptions = {
   store: new SQLiteStore(sessionStoreOptions)
 }
 
-export const handleSessionData = async(userId: number, req: any, _res: any) => {
+export const handleSessionData = async(userId: number, req: any, res: any) => {
   const sessionData = req.session as SessionData
-  
-  if (sessionData) {
-    sessionData.logged_in = true;
-    sessionData.user_id = userId;
-    // await SQLiteStore.destroy(sessionData.id);
+
+  if (!sessionData) {
+    console.warn('Req.session is undefined')
   }
 
+  try {
+    sessionData.logged_in = true;
+    sessionData.user_id = userId;
+    
+    res.cookie('session', req.sessionID, cookieOptions)
+  } catch (err) {
+    console.warn('Errort setting session data and/or cookie', err)
+  }
+  
   return sessionData;
 }

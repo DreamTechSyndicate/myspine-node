@@ -26,8 +26,24 @@ import {
 } from '../middleware'
 import { containsMissingFields } from '../utils/funcs/validation'
 import { sanitizeEmail } from '../utils/funcs/strings'
+import { Session } from '../models/Session'
 
 export const sessions: Controller = {
+  getSessionBySessionId: async(req, res) => {
+    try {
+      const { sessionId } = req.params
+
+      if (sessionId) {
+        throw new Error('Missing session Id')
+      }
+
+      const session = await Session.readBySessionId(sessionId)
+      res.status(201).json(session)
+    } catch (err) {
+      InternalServerError("get", "session data", res, err)
+    }
+  },
+
   login: async(req, res) => { 
     try {
       const { email, password } = req.body
@@ -58,7 +74,6 @@ export const sessions: Controller = {
       const sessions: SessionData | undefined = await handleSessionData(userId, req, res)
 
       if (tokens && sessions) {
-        
         res.status(201).json({
           message: "Successfully logged in",
           date: { ...user, ...tokens, sessions }
