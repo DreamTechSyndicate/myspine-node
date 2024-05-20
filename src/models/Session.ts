@@ -5,9 +5,12 @@ import { SessionData } from '../utils/types/express-session'
 const SESSIONS_TABLE = 'sessions'
 const db = knex(knexConfig)
 
-// export interface ISession {
-//   sid: string
-// }
+export interface ISession {
+  id: Number
+  sid: string
+  sess: string,
+  expire: Number // Timestamp
+}
 
 export class Session {
   static async readBySessionId(sessionId: string): Promise<SessionData> {
