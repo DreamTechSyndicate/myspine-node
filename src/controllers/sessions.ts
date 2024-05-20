@@ -58,6 +58,7 @@ export const sessions: Controller = {
       const sessions: SessionData | undefined = await handleSessionData(userId, req, res)
 
       if (tokens && sessions) {
+        
         res.status(201).json({
           message: "Successfully logged in",
           date: { ...user, ...tokens, sessions }

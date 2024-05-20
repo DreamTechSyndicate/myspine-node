@@ -32,26 +32,27 @@ For development and production stages
 1. **Knex.js** : SQL Query Builder
 2. **SQLite** : Lightweight transactional relational database
 3. **SQLite3** : Lightweight library for interactive SQLite in terminal & command prompt
-4. **cors** : Safety middleware for Browser<>Server's Cross-Origin Resource Sharing
-5. **express-rate-limit** : Brute-force rate limitor for Express.js routes
-6. **express-session** : Session management for Express.js
-7. **helmet** : Secure HTTP response headers against known CSRF attacks and other known vulnerabilities
-8. **nodemon** : A daemon that automatically watches, restarts and executes the application (See nodemon.json)
-9. **jsonwebtoken** : JWT Token generation + verification with symmetric/asymmetric signatures
-10. **crypto** : Cryptographic functionalities including OpenSSL hash, HMAC, cipher, decipher, sign and verify
-11. **uuid** : Universally Unique Identifier, 128-bit presented as 32-char hexadecimal string
+4. **argon2**: Award winning cryptographic, key derivation function algorithm for protection against password cracking
+5. **better-sqlite3-session-store** : Session-store for express-session in SQLite DB
+6. **cookie-parser** : Middleware for parsing and managing cookies / signed cookies
+7. **cors** : Safety middleware for Browser<>Server's Cross-Origin Resource Sharing
+8. **crypto** : Cryptographic functionalities including OpenSSL hash, HMAC, cipher, decipher, sign and verify
+9. **dotenv** : Environment loading module 
+10. **express-rate-limit** : Brute-force rate limitor for Express.js routes
+11. **express-session** : Session management for Express.js
+12. **helmet** : Secure HTTP response headers against known CSRF attacks and other known vulnerabilities
+13. **http-graceful-shutdown** : Graceful http servers termination logic
+14. **jsonwebtoken** : JWT Token generation + verification with symmetric/asymmetric signatures
+15. **nodemon** : A daemon that automatically watches, restarts and executes the application (See nodemon.json)
+16. **uuid** : Universally Unique Identifier, 128-bit presented as 32-char hexadecimal string
 
 ## Other devDependencies
 For development stage
 
-1. **ajv** : JSON schema validator
-2. **better-sqlite3-session-store** : Session-store for express-session in SQLite DB
-3. **dotenv** : Environment loading module 
-4. **http-terminator** : Graceful http servers termination logic
-5. **Prettier** : Opinionated formatter for code consistency and style
-6. **eslint** : Guidelines for code convention and style
-7. **eslint-plugin-prettier** : Prettier as a linter rule
-8. **eslint-config-prettier** : Prettier without linter rule conflicts
-9. **supertest** : Node.js HTTP requests-responses testing libary
-10. **ts-jest** : Typescript processor with source map support for Jest
-11. **babel-jest** : JavaScript Transformer for Jest using Babel
+1. **Prettier** : Opinionated formatter for code consistency and style
+2. **eslint** : Guidelines for code convention and style
+3. **eslint-plugin-prettier** : Prettier as a linter rule
+4. **eslint-config-prettier** : Prettier without linter rule conflicts
+5. **supertest** : Node.js HTTP requests-responses testing libary
+6. **ts-jest** : Typescript processor with source map support for Jest
+7. **babel-jest** : JavaScript Transformer for Jest using Babel

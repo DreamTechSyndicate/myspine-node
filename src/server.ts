@@ -1,4 +1,5 @@
 import cors from 'cors'
+import cookieParser from 'cookie-parser'
 import express, { Application } from 'express'
 // import fs from 'fs'
 import helmet from 'helmet'
@@ -33,6 +34,7 @@ const env = process.env.NODE_ENV
 const port = process.env.PORT
 
 app.use(express.json())
+app.use(cookieParser(cookieOptions))
 app.use(cors(corsOptions))
 app.use("/login", (
   session(sessionOptions)
