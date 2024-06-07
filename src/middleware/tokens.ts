@@ -77,7 +77,7 @@ export const requireJwt = async(req: any, res: any, next: any) => {
 
 export const handleLoginTokens = async(userId: number, _req: any, res: any): Promise<Partial<IUserToken> | undefined> => {
   const accessToken = generateToken({ userId, expiresIn: '15m' }) 
-  const refreshToken = generateToken({ userId, expiresIn: '1d' }) // Stay logged-in
+  const refreshToken = generateToken({ userId, expiresIn: '1d' }) // Stay logged-in, to obtain new access tokens once exprired
   
   try {
     const existingTokens = await UserToken.readByUserId(userId)

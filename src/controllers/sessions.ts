@@ -76,7 +76,7 @@ export const sessions: Controller = {
       if (tokens && sessions) {
         res.status(201).json({
           message: "Successfully logged in",
-          date: { ...user, ...tokens, sessions }
+          data: { ...user, ...tokens, sessions }
         })
       }
     } catch (err: unknown) {
