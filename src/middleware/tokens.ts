@@ -45,7 +45,7 @@ export const verifyToken = async (token: string): Promise<JwtPayload> => {
   })
 }
 
-export const generateResetToken = async() => {
+export const generateResetPasswordToken = async() => {
   const resetToken = crypto.randomBytes(20).toString('hex')
   const expirationDate = new Date()
 
@@ -75,18 +75,28 @@ export const requireJwt = async(req: any, res: any, next: any) => {
   }
 }
 
-export const handleLoginTokens = async(userId: number, _req: any, res: any): Promise<Partial<IUserToken> | undefined> => {
+export const handleLoginTokens = async(userId: number, req: any, res: any): Promise<Partial<IUserToken> | undefined> => {
   const accessToken = generateToken({ userId, expiresIn: '15m' }) 
   const refreshToken = generateToken({ userId, expiresIn: '1d' }) // Stay logged-in, to obtain new access tokens once exprired
   
   try {
     const existingTokens = await UserToken.readByUserId(userId)
 
-    if (existingTokens && existingTokens.access_token_expires_at > new Date(Date.now())) {
-      // Skip insertion if user already has valid tokens
-      return { 
-        access_token: existingTokens.access_token, 
-        refresh_token: existingTokens.refresh_token 
+    if (existingTokens) {
+      if (existingTokens.access_token_expires_at > new Date(Date.now())) {
+        return { 
+          access_token: existingTokens.access_token, 
+          refresh_token: existingTokens.refresh_token 
+        }
+      } else {
+        const newAccessToken = await handleTokenRefresh(req, res)
+
+        if (newAccessToken) {
+          return {
+            access_token: newAccessToken,
+            refresh_token: refreshToken
+          }
+        }
       }
     }
 
@@ -109,6 +119,28 @@ export const handleLoginTokens = async(userId: number, _req: any, res: any): Pro
     return undefined
   }
 }
+
+export const handleTokenRefresh = async(req: any, res: any) => {
+  const refreshToken = req.body.refreshToken;
+
+  if (!refreshToken) {
+    return UnauthorizedRequestError("refresh token", res);
+  }
+
+  try {
+    const userToken = await UserToken.readByRefreshToken(refreshToken);
+
+    if (!userToken) {
+      return UnauthorizedRequestError("refresh token", res);
+    }
+
+    const newAccessToken = generateToken({ userId: userToken.user_id, expiresIn: '15m' });
+    return newAccessToken;
+
+  } catch (err) {
+    InternalServerError("refresh", "token", res, err);
+  }
+};
 
 export const handleLogoutTokens = async(userId: number, res: any) => {
   try {

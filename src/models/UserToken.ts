@@ -46,7 +46,7 @@ export class UserToken {
     return tokens
   }
 
-  static async readByToken(decoded: JwtPayload): Promise<IUserToken> {
+  static async readByRefreshToken(decoded: JwtPayload): Promise<IUserToken> {
     return await db(USER_TOKENS_TABLE)
       .where('refresh_token', '=', decoded)
       .first<IUserToken>()

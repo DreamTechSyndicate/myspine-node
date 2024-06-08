@@ -3,7 +3,6 @@ import 'dotenv/config'
 
 type OriginCallback = (err: Error | null, origin?: boolean) => void
 
-
 export const corsOptions: CorsOptions = {
   origin: (origin, callback: OriginCallback) => {
     if (origin === process.env.CLIENT_URL || !origin) {

@@ -21,7 +21,7 @@ import {
 } from '../middleware'
 import { SessionData } from 'src/utils/types/express-session'
 import { 
-  generateResetToken,
+  generateResetPasswordToken,
   requestMail
 } from '../middleware'
 import { containsMissingFields } from '../utils/funcs/validation'
@@ -45,6 +45,8 @@ export const sessions: Controller = {
   },
 
   login: async(req, res) => { 
+    console.log(req.headers)
+    
     try {
       const { email, password } = req.body
 
@@ -72,6 +74,7 @@ export const sessions: Controller = {
       const userId = user!.id
       const tokens: Partial<IUserToken> | undefined = await handleLoginTokens(userId, req, res)
       const sessions: SessionData | undefined = await handleSessionData(userId, req, res)
+      
 
       if (tokens && sessions) {
         res.status(201).json({
@@ -115,7 +118,7 @@ export const sessions: Controller = {
       const {
         reset_password_token,
         reset_password_token_expiration_date
-      } = await generateResetToken()
+      } = await generateResetPasswordToken()
 
       if (!reset_password_token) {
         InternalServerError("create", "reset token", res)

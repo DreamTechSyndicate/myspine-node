@@ -17,4 +17,4 @@ export class Session {
       .where('sid', '=', sessionId)
       .first<ISession, Pick<ISession, "sid">>()
   }
-} 
+}

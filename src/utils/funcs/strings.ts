@@ -3,5 +3,6 @@ export const capitalizeFirstLetter = (str: string): string => {
 }
 
 export const sanitizeEmail = (email: string) => {
+  // TODO: Need a more strict and robust validation
   return email.trim().toLowerCase()
 }
