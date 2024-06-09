@@ -11,7 +11,7 @@ export {
   generateToken,
   handleLoginTokens,
   handleLogoutTokens,
-  handleRefreshToken,
+  handleTokenRefresh,
   generateResetPasswordToken,
   requireJwt,
   verifyToken
