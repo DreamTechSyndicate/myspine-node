@@ -16,8 +16,9 @@ exports.up = function(knex) {
     table.text('access_token');
     table.text('refresh_token');
     table.text('reset_password_token');
-    table.date('reset_password_token_expiration_date');
     table.timestamp('access_token_expires_at');
+    table.timestamp('refresh_token_expires_at');
+    table.timestamp('reset_password_token_expires_at');
   })
 };
 

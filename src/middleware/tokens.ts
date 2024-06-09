@@ -53,7 +53,7 @@ export const generateResetPasswordToken = async() => {
 
   return {
     reset_password_token: await argon2.hash(resetToken),
-    reset_password_token_expiration_date: expirationDate
+    reset_password_token_expires_at: expirationDate
   }
 }
 
@@ -83,19 +83,19 @@ export const handleLoginTokens = async(userId: number, req: any, res: any): Prom
     const existingTokens = await UserToken.readByUserId(userId)
 
     if (existingTokens) {
-      if (existingTokens.access_token_expires_at > new Date(Date.now())) {
+
+      if (existingTokens.access_token_expires_at > new Date(Date.now())) {        
         return { 
           access_token: existingTokens.access_token, 
-          refresh_token: existingTokens.refresh_token 
+          refresh_token: existingTokens.refresh_token
         }
-      } else {
-        const newAccessToken = await handleTokenRefresh(req, res)
 
-        if (newAccessToken) {
-          return {
-            access_token: newAccessToken,
-            refresh_token: refreshToken
-          }
+      } else {
+        const tokens = await handleTokenRefresh(userId, req, res)
+        
+        return {
+          access_token: tokens?.access_token,
+          refresh_token: tokens?.refresh_token
         }
       }
     }
@@ -111,8 +111,8 @@ export const handleLoginTokens = async(userId: number, req: any, res: any): Prom
     }
 
     return { 
-      access_token: tokens?.access_token, 
-      refresh_token: tokens?.refresh_token 
+      access_token: tokens.access_token, 
+      refresh_token: tokens.refresh_token 
     }
   } catch (err) {
     InternalServerError("login", "user", res, err)
@@ -120,7 +120,7 @@ export const handleLoginTokens = async(userId: number, req: any, res: any): Prom
   }
 }
 
-export const handleTokenRefresh = async(req: any, res: any) => {
+export const handleTokenRefresh = async(userId: number, req: any, res: any) => {
   const refreshToken = req.body.refreshToken;
 
   if (!refreshToken) {
@@ -134,8 +134,34 @@ export const handleTokenRefresh = async(req: any, res: any) => {
       return UnauthorizedRequestError("refresh token", res);
     }
 
-    const newAccessToken = generateToken({ userId: userToken.user_id, expiresIn: '15m' });
-    return newAccessToken;
+    // Generate a new access_token if the refresh_token has not already expired
+    if (userToken.refresh_token_expires_at > new Date(Date.now())) {
+
+      const updatedTokens = {
+        access_token: generateToken({ userId: userToken.user_id, expiresIn: '15m' }),
+        access_token_expires_at: new Date(Date.now() + (
+          Number(process.env.ACCESS_TOKEN_EXPIRES_AT) || 15 * 60 * 1000 // 15 minutes or 900000ms
+        )),
+        refresh_token_expires_at: new Date(Date.now() + (
+          Number(process.env.REFRESH_TOKEN_EXPIRES_AT) || 24 * 60 * 60 * 1000 // 1 day or 864000000ms
+        ))
+      }
+        
+      const response = await UserToken.update({ 
+        user_id: userId, 
+        payload: updatedTokens
+      })
+
+      !response && InternalServerError("update", "user token", res)
+    
+      return { 
+        access_token: updatedTokens.access_token,
+        refresh_token: refreshToken
+      }
+    } else {
+      res.redirect('/login')
+      return undefined
+    }
 
   } catch (err) {
     InternalServerError("refresh", "token", res, err);

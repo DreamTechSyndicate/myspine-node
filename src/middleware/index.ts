@@ -9,9 +9,10 @@ export {
 } from './sessions'
 export { 
   generateToken,
-  generateResetToken,
   handleLoginTokens,
   handleLogoutTokens,
+  handleRefreshToken,
+  generateResetPasswordToken,
   requireJwt,
   verifyToken
 } from './tokens'

@@ -75,7 +75,6 @@ export const sessions: Controller = {
       const tokens: Partial<IUserToken> | undefined = await handleLoginTokens(userId, req, res)
       const sessions: SessionData | undefined = await handleSessionData(userId, req, res)
       
-
       if (tokens && sessions) {
         res.status(201).json({
           message: "Successfully logged in",
@@ -117,7 +116,7 @@ export const sessions: Controller = {
       const user_id = user!.id
       const {
         reset_password_token,
-        reset_password_token_expiration_date
+        reset_password_token_expires_at
       } = await generateResetPasswordToken()
 
       if (!reset_password_token) {
@@ -127,7 +126,7 @@ export const sessions: Controller = {
       const userToken = await UserToken.updateResetToken({ 
         user_id,
         reset_password_token,
-        reset_password_token_expiration_date
+        reset_password_token_expires_at
       })
 
       if (!userToken) {
@@ -154,7 +153,7 @@ export const sessions: Controller = {
         data: {
           user_id, 
           reset_password_token,   
-          reset_password_token_expiration_date
+          reset_password_token_expires_at
         }
       })
     } catch (err: Error | unknown) {
@@ -205,14 +204,14 @@ export const sessions: Controller = {
         InternalServerError("update", "password", res)
       }
 
-      const exp = userToken.reset_password_token_expiration_date
+      const exp = userToken.reset_password_token_expires_at
       const isTokenUnexpired = exp && (exp > new Date(Date.now()))
       
       if (reset_password_token === userToken.reset_password_token && isTokenUnexpired) {
         await UserToken.updateResetToken({ 
           user_id,
           reset_password_token: undefined,
-          reset_password_token_expiration_date: undefined
+          reset_password_token_expires_at: undefined
         })
       }
 
