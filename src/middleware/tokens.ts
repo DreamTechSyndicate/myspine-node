@@ -8,6 +8,7 @@ import {
 import { v4 } from 'uuid'
 import { UserToken, IUserToken } from '../models'
 import { JwtPayload } from 'src/utils/types/generic'
+import { accessTokenCookieOptions, cookieOptions, refreshTokenCookieOptions } from './cookieOptions'
 import argon2 from 'argon2'
 
 export const privateKey = crypto.createPrivateKey({
@@ -76,8 +77,8 @@ export const requireJwt = async(req: any, res: any, next: any) => {
 }
 
 export const handleLoginTokens = async(userId: number, req: any, res: any): Promise<Partial<IUserToken> | undefined> => {
-  const accessToken = generateToken({ userId, expiresIn: '15m' }) 
-  const refreshToken = generateToken({ userId, expiresIn: '1d' }) // Stay logged-in, to obtain new access tokens once exprired
+  const accessToken = generateToken({ userId, expiresIn: '1h' }) 
+  const refreshToken = generateToken({ userId, expiresIn: '1d' }) // Stay logged-in, to obtain new access tokens once expired
   
   try {
     const existingTokens = await UserToken.readByUserId(userId)
@@ -121,7 +122,7 @@ export const handleLoginTokens = async(userId: number, req: any, res: any): Prom
 }
 
 export const handleTokenRefresh = async(userId: number, req: any, res: any) => {
-  const refreshToken = req.body.refreshToken;
+  const refreshToken = req.signedCookies.refreshToken
 
   if (!refreshToken) {
     return UnauthorizedRequestError("refresh token", res);
@@ -138,13 +139,9 @@ export const handleTokenRefresh = async(userId: number, req: any, res: any) => {
     if (userToken.refresh_token_expires_at > new Date(Date.now())) {
 
       const updatedTokens = {
-        access_token: generateToken({ userId: userToken.user_id, expiresIn: '15m' }),
-        access_token_expires_at: new Date(Date.now() + (
-          Number(process.env.ACCESS_TOKEN_EXPIRES_AT) || 15 * 60 * 1000 // 15 minutes or 900000ms
-        )),
-        refresh_token_expires_at: new Date(Date.now() + (
-          Number(process.env.REFRESH_TOKEN_EXPIRES_AT) || 24 * 60 * 60 * 1000 // 1 day or 864000000ms
-        ))
+        access_token: generateToken({ userId: userToken.user_id, expiresIn: '1h' }),
+        access_token_expires_at: new Date(Date.now() + accessTokenCookieOptions.maxAge),
+        refresh_token_expires_at: new Date(Date.now() + refreshTokenCookieOptions.maxAge)
       }
         
       const response = await UserToken.update({ 
@@ -167,6 +164,17 @@ export const handleTokenRefresh = async(userId: number, req: any, res: any) => {
     InternalServerError("refresh", "token", res, err);
   }
 };
+
+export const tokenStorage = {
+  setTokens: ({ res, access_token, refresh_token }: { 
+    res: any, 
+    access_token: string, 
+    refresh_token: string 
+  }) => {
+    res.cookie('accessToken', access_token, accessTokenCookieOptions);
+    res.cookie('refreshToken', refresh_token, refreshTokenCookieOptions)
+  }
+}
 
 export const handleLogoutTokens = async(userId: number, res: any) => {
   try {

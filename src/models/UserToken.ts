@@ -1,7 +1,7 @@
 import knex from 'knex'
 import knexConfig from '../../knexfile'
 import { JwtPayload } from "src/utils/types/generic"
-import { IUser } from './User'
+import { accessTokenCookieOptions, refreshTokenCookieOptions } from '../middleware/cookieOptions'
 
 export interface IUserToken {
   id: number,
@@ -38,12 +38,8 @@ export class UserToken {
         user_id,
         access_token,
         refresh_token,
-        access_token_expires_at: new Date(Date.now() + (
-          Number(process.env.ACCESS_TOKEN_EXPIRES_AT) || 15 * 60 * 1000 // 15 minutes or 900000ms
-        )),
-        refresh_token_expires_at: new Date(Date.now() + (
-          Number(process.env.REFRESH_TOKEN_EXPIRES_AT) || 24 * 60 * 60 * 1000 // 1 day or 864000000ms
-        ))
+        access_token_expires_at: new Date(Date.now() + accessTokenCookieOptions.maxAge),
+        refresh_token_expires_at: new Date(Date.now() + refreshTokenCookieOptions.maxAge)
       })
       .returning('*')
     }

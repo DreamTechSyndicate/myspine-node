@@ -17,6 +17,7 @@ import {
   handleLoginTokens, 
   handleLogoutTokens,
   handleSessionData,
+  tokenStorage,
   MailTypes
 } from '../middleware'
 import { SessionData } from 'src/utils/types/express-session'
@@ -44,9 +45,7 @@ export const sessions: Controller = {
     }
   },
 
-  login: async(req, res) => { 
-    console.log(req.headers)
-    
+  login: async(req, res) => {
     try {
       const { email, password } = req.body
 
@@ -75,10 +74,16 @@ export const sessions: Controller = {
       const tokens: Partial<IUserToken> | undefined = await handleLoginTokens(userId, req, res)
       const sessions: SessionData | undefined = await handleSessionData(userId, req, res)
       
-      if (tokens && sessions) {
+      if (tokens?.access_token && tokens?.refresh_token && sessions) {
+        tokenStorage.setTokens({ 
+          res, 
+          access_token: tokens.access_token, 
+          refresh_token: tokens.refresh_token 
+        })
+
         res.status(201).json({
           message: "Successfully logged in",
-          data: { ...user, ...tokens, sessions }
+          data: user
         })
       }
     } catch (err: unknown) {
@@ -93,8 +98,13 @@ export const sessions: Controller = {
       await handleLogoutTokens(userId, res)
       
       req.session.destroy()
-
-      res.send("Successfully logging out")
+      req.session.save((err: unknown | Error) => {
+        if (err) {
+          console.warn('Error setting session data and/or cookie', err)
+          InternalServerError("update", "session", res)
+        }
+      })
+      res.send("Successfully logged out")
       res.redirect('/login')
     } catch (err: Error | unknown) {
       InternalServerError("logout", "user", res, err)
@@ -134,7 +144,7 @@ export const sessions: Controller = {
       }
 
       const resetURL = `${clientURL}/passwordReset?token=${reset_password_token}&userId=${user_id}`
-
+      
       const patientName = `${patient?.firstname} ${patient?.lastname}`
 
       requestMail({

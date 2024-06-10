@@ -14,6 +14,7 @@ export {
   handleTokenRefresh,
   generateResetPasswordToken,
   requireJwt,
+  tokenStorage,
   verifyToken
 } from './tokens'
 export {

@@ -1,6 +1,22 @@
 export const cookieOptions = {
-  secret: process.env.SESSION_SECRET!,
   httpOnly: true, // Accessible via server and not client side script, may tamper with certain procedure like SSO, that is client-side access reliant
   secure: true,
+  signed: true,
+}
+
+export const sessionCookieOptions = {
+  ...cookieOptions,
+  secret: process.env.SESSION_SECRET!,
   maxAge: Number(process.env.SESSION_COOKIE_MAX_AGE) || 24 * 60 * 60 * 1000  // Expires in 1 day or 864000000ms
+}
+
+export const accessTokenCookieOptions = {
+  ...cookieOptions,
+  maxAge: Number(process.env.ACCESS_TOKEN_EXPIRES_AT) || 60 * 60 * 1000 // 60 minutes or 3.600.000ms
+}
+
+export const refreshTokenCookieOptions = {
+  ...cookieOptions,
+  maxAge: Number(process.env.REFRESH_TOKEN_EXPIRES_AT) 
+  || 24 * 60 * 60 * 1000 // 24 hours or 8.600.000ms
 }

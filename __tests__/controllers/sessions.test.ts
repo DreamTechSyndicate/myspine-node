@@ -120,10 +120,9 @@ describe("sessions controller", () => {
       const user = await User.readByEmail('gus@pollohermanos.cl')
       const userId = user?.id
       const payload = { email: user?.email, password: user?.password }
-      const oneDay = '1d'
 
       if (userId) {
-        const token = generateToken({ userId, expiresIn: oneDay })
+        const token = generateToken({ userId, expiresIn: '1d' })
   
         // Login to generate access / refresh tokens 
         await request(app)
