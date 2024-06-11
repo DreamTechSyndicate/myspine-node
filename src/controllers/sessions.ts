@@ -14,11 +14,12 @@ import {
   UserToken
 } from '../models'
 import { 
-  handleLoginTokens, 
+  handleLoginTokens,
   handleLogoutTokens,
   handleSessionData,
   tokenStorage,
-  MailTypes
+  MailTypes,
+  verifyToken
 } from '../middleware'
 import { SessionData } from 'src/utils/types/express-session'
 import { 
@@ -75,12 +76,15 @@ export const sessions: Controller = {
       const sessions: SessionData | undefined = await handleSessionData(userId, req, res)
       
       if (tokens?.access_token && tokens?.refresh_token && sessions) {
-        tokenStorage.setTokens({ 
-          res, 
-          access_token: tokens.access_token, 
-          refresh_token: tokens.refresh_token 
-        })
+        const decoded = await verifyToken(tokens.access_token, )
 
+        tokenStorage.setTokens({
+          res,
+          token: decoded,
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token
+        })
+      
         res.status(201).json({
           message: "Successfully logged in",
           data: user

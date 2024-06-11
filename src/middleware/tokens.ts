@@ -8,7 +8,10 @@ import {
 import { v4 } from 'uuid'
 import { UserToken, IUserToken } from '../models'
 import { JwtPayload } from 'src/utils/types/generic'
-import { accessTokenCookieOptions, cookieOptions, refreshTokenCookieOptions } from './cookieOptions'
+import { 
+  accessTokenCookieOptions, 
+  refreshTokenCookieOptions 
+} from './cookieOptions'
 import argon2 from 'argon2'
 
 export const privateKey = crypto.createPrivateKey({
@@ -33,7 +36,7 @@ export const generateToken = ({ userId, expiresIn }: { userId: number, expiresIn
   return jwt.sign(payload, privateKey, options)
 }
 
-export const verifyToken = async (token: string): Promise<JwtPayload> => {
+export const verifyToken = async (token: string): Promise<JwtPayload | string> => {
   return await new Promise<JwtPayload>((resolve, reject) => {
     jwt.verify(token, publicKey, (err, decoded) => {
       if (err) {
@@ -44,6 +47,28 @@ export const verifyToken = async (token: string): Promise<JwtPayload> => {
       resolve(decoded as JwtPayload);
     })
   })
+}
+
+export const requireJwt = async(req: any, res: any, next: any) => {
+  try {
+    if (req.path === '/login' || req.path === '/patients/create') {
+      next()
+    } else {
+      const authorizationHeader = req.headers.authorization
+
+      if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+        throw new Error('Authorization header is missing or invalid');
+      }
+
+      const token = authorizationHeader.split(' ')[1]
+      const decoded = await verifyToken(token)
+
+      req.user = decoded
+      next()
+    }
+  } catch(err) {
+    UnauthorizedRequestError('token', res, err)
+  }
 }
 
 export const generateResetPasswordToken = async() => {
@@ -58,24 +83,6 @@ export const generateResetPasswordToken = async() => {
   }
 }
 
-export const requireJwt = async(req: any, res: any, next: any) => {
-  try {
-    const authorizationHeader = req.headers.authorization
-    
-    if (!authorizationHeader) {
-      throw new Error('Authorization header is missing')
-    }
-
-    const token = authorizationHeader.split(' ')[1]
-    const decoded = await verifyToken(token)
-
-    req.user = decoded
-    next()
-  } catch(err) {
-    UnauthorizedRequestError('token', res, err)
-  }
-}
-
 export const handleLoginTokens = async(userId: number, req: any, res: any): Promise<Partial<IUserToken> | undefined> => {
   const accessToken = generateToken({ userId, expiresIn: '1h' }) 
   const refreshToken = generateToken({ userId, expiresIn: '1d' }) // Stay logged-in, to obtain new access tokens once expired
@@ -84,16 +91,13 @@ export const handleLoginTokens = async(userId: number, req: any, res: any): Prom
     const existingTokens = await UserToken.readByUserId(userId)
 
     if (existingTokens) {
-
       if (existingTokens.access_token_expires_at > new Date(Date.now())) {        
         return { 
           access_token: existingTokens.access_token, 
           refresh_token: existingTokens.refresh_token
         }
-
       } else {
         const tokens = await handleTokenRefresh(userId, req, res)
-        
         return {
           access_token: tokens?.access_token,
           refresh_token: tokens?.refresh_token
@@ -159,18 +163,24 @@ export const handleTokenRefresh = async(userId: number, req: any, res: any) => {
       res.redirect('/login')
       return undefined
     }
-
   } catch (err) {
     InternalServerError("refresh", "token", res, err);
   }
 };
 
 export const tokenStorage = {
-  setTokens: ({ res, access_token, refresh_token }: { 
+  setTokens: ({ 
+    res, 
+    token, 
+    access_token, 
+    refresh_token 
+  }: { 
     res: any, 
+    token: any,
     access_token: string, 
     refresh_token: string 
   }) => {
+    res.cookie('Authorization', `Bearer ${token}`, accessTokenCookieOptions)
     res.cookie('accessToken', access_token, accessTokenCookieOptions);
     res.cookie('refreshToken', refresh_token, refreshTokenCookieOptions)
   }
