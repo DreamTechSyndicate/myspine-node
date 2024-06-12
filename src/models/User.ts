@@ -34,7 +34,7 @@ export class User {
   static async readByEmail(email: string): Promise<IUser | undefined> {
     return await db(USERS_TABLE)
       .where('email', '=', email)
-      .first()
+      .first<IUser, Pick<IUser, "email">>()
   }
 
   static async update({ userId, payload }: { userId: number, payload: Partial<IUser> }) {

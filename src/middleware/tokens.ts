@@ -83,7 +83,7 @@ export const generateResetPasswordToken = async() => {
   }
 }
 
-export const handleLoginTokens = async(userId: number, req: any, res: any): Promise<Partial<IUserToken> | undefined> => {
+export const handleInitialTokens = async(userId: number, req: any, res: any): Promise<Partial<IUserToken> | undefined> => {
   const accessToken = generateToken({ userId, expiresIn: '1h' }) 
   const refreshToken = generateToken({ userId, expiresIn: '1d' }) // Stay logged-in, to obtain new access tokens once expired
   
@@ -112,12 +112,13 @@ export const handleLoginTokens = async(userId: number, req: any, res: any): Prom
     })
 
     if (!tokens) {
-      return undefined;
-    }
-
-    return { 
-      access_token: tokens.access_token, 
-      refresh_token: tokens.refresh_token 
+      InternalServerError("create", "tokens", res)
+      return;
+    } else {
+      return { 
+        access_token: tokens.access_token, 
+        refresh_token: tokens.refresh_token 
+      }
     }
   } catch (err) {
     InternalServerError("login", "user", res, err)

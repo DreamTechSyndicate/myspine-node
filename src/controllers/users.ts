@@ -6,7 +6,7 @@ import {
   NotFoundError
 } from '../utils/funcs/errors'
 import { Controller } from '../utils/types/generic'
-import { User, IUser } from '../models'
+import { User, IUser, Patient } from '../models'
 import { containsMissingFields } from '../utils/funcs/validation'
 import { sanitizeEmail } from '../utils/funcs/strings'
 
@@ -40,12 +40,6 @@ export const users: Controller = {
       let email: string | undefined = req.body?.email
       let password: string | undefined = req.body?.password
 
-      const existingUser = email && await User.readByEmail(sanitizeEmail(email))
-
-      if (existingUser) {
-        res.redirect('/login')
-      }
-
       const missingFields = containsMissingFields({ 
         payload: { email, password },     
         requiredFields: ['email', 'password']
@@ -62,8 +56,23 @@ export const users: Controller = {
       }
 
       if (email && hashedPass) {
-        const user = await User.create({ email: sanitizeEmail(email), password: hashedPass });
-        res.status(201).json(user);
+        const sanitizedEmail = sanitizeEmail(email)
+        const existingUser = email && await User.readByEmail(sanitizedEmail)
+
+        if (existingUser) {
+          const patient = await Patient.readByEmail(sanitizedEmail)
+
+          patient && await Patient.update({ 
+            patientId: patient.id, 
+            payload: { user_id: existingUser.id, email: sanitizedEmail }
+          })
+
+          res.status(302).json(existingUser)
+          return;
+        } else {
+          const user = await User.create({ email: sanitizedEmail, password: hashedPass });
+          res.status(201).json(user);
+        }
       }
     } catch (err: Error | unknown) {
       InternalServerError("create", "user", res, err)

@@ -9,7 +9,7 @@ export {
 } from './sessions'
 export { 
   generateToken,
-  handleLoginTokens,
+  handleInitialTokens,
   handleLogoutTokens,
   handleTokenRefresh,
   generateResetPasswordToken,

@@ -94,12 +94,9 @@ export const requestMail = async ({
     const mailConfigs = getMailConfigs(mailType, from, to, html);
     const info = await transporter.sendMail(mailConfigs);
     console.log('Email sent:', info.response);
-
     return info;
-
   } catch (err) {
     console.error('Email error:', err);
-    
     throw new Error('Unable to mail an appointment request at this time. Please try again later');
   } 
 };

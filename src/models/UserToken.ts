@@ -31,18 +31,15 @@ export class UserToken {
       refresh_token
     } = tokenBody
 
-    let tokens;
-    if (access_token && refresh_token) {
-      [tokens] = await db(USER_TOKENS_TABLE)
-      .insert<IUserToken>({
-        user_id,
-        access_token,
-        refresh_token,
-        access_token_expires_at: new Date(Date.now() + accessTokenCookieOptions.maxAge),
-        refresh_token_expires_at: new Date(Date.now() + refreshTokenCookieOptions.maxAge)
-      })
-      .returning('*')
-    }
+    const [tokens] = await db(USER_TOKENS_TABLE)
+    .insert<IUserToken>({
+      user_id,
+      access_token,
+      refresh_token,
+      access_token_expires_at: new Date(Date.now() + accessTokenCookieOptions.maxAge),
+      refresh_token_expires_at: new Date(Date.now() + refreshTokenCookieOptions.maxAge)
+    })
+    .returning('*')
 
     return tokens
   }
@@ -53,9 +50,9 @@ export class UserToken {
       .first<IUserToken>()
   }
 
-  static async readByUserId(userId: number): Promise<IUserToken> {
+  static async readByUserId(user_id: number): Promise<IUserToken> {
     return await db(USER_TOKENS_TABLE)
-      .where('user_id', '=', userId)
+      .where('user_id', '=', user_id)
       .first<IUserToken, Pick<IUserToken, "user_id">>()
   }
 
@@ -86,9 +83,9 @@ export class UserToken {
     return updatedUserToken
   }
 
-  static async delete(userId: number) {
+  static async delete(user_id: number) {
     return await db(USER_TOKENS_TABLE)
-      .where('user_id', '=', userId)
+      .where('user_id', '=', user_id)
       .first<IUserToken, Pick<IUserToken, 'user_id'>>()
       .delete()
   }

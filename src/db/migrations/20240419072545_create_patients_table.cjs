@@ -5,20 +5,22 @@
 exports.up = function(knex) {
   return knex.schema.createTable('patients', (table) => {
     table.increments('id')
-      .primary()
-      .unique()
-      .notNullable();
+     .primary()
+     .unique()
+     .notNullable();
     table.integer('user_id')
-      .references('id')
-      .inTable('users')
-      .onDelete('CASCADE')
+     .references('id')
+     .inTable('users')
+     .onDelete('CASCADE')
+     .onUpdate('CASCADE')
+     .index();
     table.text('firstname').notNullable()
     table.text('lastname').notNullable()
     table.text('pain_description').notNullable()
     table.integer('pain_degree').notNullable()
     table.text('address')
-    table.text('email').notNullable()
-    table.integer('phone_number').notNullable()
+    table.text('email').notNullable().unique()
+    table.string('phone_number').notNullable()
   })
 };
 

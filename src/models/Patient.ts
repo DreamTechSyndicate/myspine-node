@@ -3,7 +3,7 @@ import knexConfig from "../../knexfile"
 
 export interface IPatient {
   id: number,
-  user_id?: number,
+  user_id: number,
   firstname: string,
   lastname: string,
   pain_description: string,
@@ -34,6 +34,12 @@ export class Patient {
     return await db(PATIENTS_TABLE)
       .where('user_id', '=', userId)
       .first<IPatient, Pick<IPatient, "user_id">>()
+  }
+
+  static async readByEmail(email: string) {
+    return await db(PATIENTS_TABLE)
+      .where('email', '=', email)
+      .first<IPatient, Pick<IPatient, "email">>()
   }
 
   static async update({ patientId, payload }: { patientId: number, payload: Partial<IPatient> }) {

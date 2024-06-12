@@ -9,10 +9,11 @@ exports.up = function(knex) {
          .unique()
          .notNullable();
     table.integer('user_id')
-         .notNullable()
          .references('id')
          .inTable('users')
-         .onDelete('CASCADE');
+         .onDelete('CASCADE')
+         .onUpdate('CASCADE')
+         .index();
     table.text('access_token');
     table.text('refresh_token');
     table.text('reset_password_token');

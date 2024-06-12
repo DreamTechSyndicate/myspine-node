@@ -14,7 +14,7 @@ import {
   UserToken
 } from '../models'
 import { 
-  handleLoginTokens,
+  handleInitialTokens,
   handleLogoutTokens,
   handleSessionData,
   tokenStorage,
@@ -72,7 +72,7 @@ export const sessions: Controller = {
       }
 
       const userId = user!.id
-      const tokens: Partial<IUserToken> | undefined = await handleLoginTokens(userId, req, res)
+      const tokens: Partial<IUserToken> | undefined = await handleInitialTokens(userId, req, res)
       const sessions: SessionData | undefined = await handleSessionData(userId, req, res)
       
       if (tokens?.access_token && tokens?.refresh_token && sessions) {
@@ -128,6 +128,7 @@ export const sessions: Controller = {
       }
 
       const user_id = user!.id
+      
       const {
         reset_password_token,
         reset_password_token_expires_at
@@ -137,19 +138,28 @@ export const sessions: Controller = {
         InternalServerError("create", "reset token", res)
       }
 
-      const userToken = await UserToken.updateResetToken({ 
-        user_id,
-        reset_password_token,
-        reset_password_token_expires_at
-      })
+      const userToken = await UserToken.readByUserId(user_id)
 
       if (!userToken) {
-        InternalServerError("update", "reset token", res)
+        const newUserToken = await UserToken.create({
+          user_id,
+          access_token: '',
+          refresh_token: ''
+        })
+
+        !newUserToken && InternalServerError("create", "user token", res)
+
+        const updatedUserToken = await UserToken.updateResetToken({
+          user_id,
+          reset_password_token,
+          reset_password_token_expires_at
+        })
+
+        !updatedUserToken && InternalServerError("update", "reset token", res)
       }
 
       const resetURL = `${clientURL}/passwordReset?token=${reset_password_token}&userId=${user_id}`
-      
-      const patientName = `${patient?.firstname} ${patient?.lastname}`
+      const patientName = patient ? `${patient?.firstname} ${patient?.lastname}` : 'Patient'
 
       requestMail({
         mailType: MailTypes.RESET_PASS_REQUESTED,
@@ -178,14 +188,14 @@ export const sessions: Controller = {
   resetPassword: async(req, res) => {
     try {
       const {
-        user_id, 
         new_password,
-        reset_password_token,
+        user_id,
+        reset_password_token
       } = req.body
 
       const missingFields = containsMissingFields({
         payload: req.body,
-        requiredFields: ['user_id', 'new_password', 'reset_password_token'],
+        requiredFields: ['new_password', 'user_id', 'reset_password_token'],
       })
 
       if (missingFields) {

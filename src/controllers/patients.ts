@@ -4,7 +4,7 @@ import {
   NotFoundError,
 } from '../utils/funcs/errors'
 import { Controller } from '../utils/types/generic'
-import { IPatient, Patient } from '../models'
+import { Patient, User, IPatient, IUser } from '../models'
 import { containsMissingFields } from '../utils/funcs/validation'
 import { 
   capitalizeFirstLetter, 
@@ -24,7 +24,7 @@ export const patients: Controller = {
 
       res.status(200).json(patient)
     } catch (err: unknown) {
-      InternalServerError("get", "user", res, err)
+      InternalServerError("get", "patient", res, err)
     }
   },
 
@@ -47,13 +47,12 @@ export const patients: Controller = {
       })
 
       if (missingFields) {
-        return BadRequestError(missingFields, res) 
+        BadRequestError(missingFields, res) 
       }
 
       const sanitizedEmail = sanitizeEmail(email)
 
-      const patient = await Patient.create({ 
-        user_id,
+      const payload = {
         firstname: capitalizeFirstLetter(firstname),
         lastname: capitalizeFirstLetter(lastname),
         pain_description: pain_description,
@@ -61,9 +60,26 @@ export const patients: Controller = {
         address,
         email: sanitizedEmail,
         phone_number
-      })
+      }
 
-      if (Patient) {
+      let user;
+      let patient;
+
+      user_id
+        ? user = await User.readById(user_id)
+        : patient = await Patient.create(payload)
+
+
+      if (user) {
+        patient = await Patient.create({ ...payload, user_id })
+        
+        await User.update({ 
+          userId: user_id, 
+          payload: { email: sanitizedEmail }
+        })
+      }
+
+      if (patient) {
         requestMail({
           mailType: MailTypes.APPT_REQUESTED,
           from: {
@@ -84,7 +100,7 @@ export const patients: Controller = {
 
       res.status(201).json(patient)
     } catch (err: Error | unknown) {
-      InternalServerError("create", "user", res, err)
+      InternalServerError("create", "patient", res, err)
     }
   },
 
@@ -150,7 +166,7 @@ export const patients: Controller = {
       const updatedPatient = await Patient.update({ patientId, payload })
       res.status(201).json(updatedPatient)
     } catch (err: Error | unknown) {
-      InternalServerError("update", "user", res, err)
+      InternalServerError("update", "patient", res, err)
     }
   },
 
