@@ -1,3 +1,5 @@
+import crypto from 'crypto'
+
 export const containsMissingFields = ({ payload, requiredFields }: { 
   payload: { [key: string]: any }, 
   requiredFields: string[],
@@ -15,4 +17,11 @@ export const containsMissingFields = ({ payload, requiredFields }: {
   }
 
   return undefined
+}
+
+export const verifyCSPRNG = (storedToken: string, providedToken: string) => {
+  if (storedToken.length !== providedToken.length) {
+    return false
+  }
+  return crypto.timingSafeEqual(Buffer.from(storedToken), Buffer.from(providedToken))
 }

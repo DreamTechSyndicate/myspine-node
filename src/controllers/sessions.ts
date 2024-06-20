@@ -24,11 +24,13 @@ import {
 import { SessionData } from 'src/utils/types/express-session'
 import { 
   generateResetPasswordToken,
-  requestMail
+  sendEmail
 } from '../middleware'
-import { containsMissingFields } from '../utils/funcs/validation'
+import { containsMissingFields, verifyCSPRNG } from '../utils/funcs/validation'
 import { sanitizeEmail } from '../utils/funcs/strings'
 import { Session } from '../models/Session'
+
+const clientURL = process.env.CLIENT_URL
 
 export const sessions: Controller = {
   getSessionBySessionId: async(req, res) => {
@@ -117,25 +119,24 @@ export const sessions: Controller = {
 
   forgotPassword: async(req, res) => {
     const { email } = req.body
-    const clientURL = process.env.CLIENT_URL
 
     try {
       const user = await User.readByEmail(sanitizeEmail(email))
       const patient = user && await Patient.readByUserId(user.id)
 
       if (!user) {
-        BadRequestError("email", res)
+        return BadRequestError("email", res)
       }
 
-      const user_id = user!.id
+      const user_id = user.id
       
       const {
         reset_password_token,
         reset_password_token_expires_at
-      } = await generateResetPasswordToken()
+      } = generateResetPasswordToken()
 
       if (!reset_password_token) {
-        InternalServerError("create", "reset token", res)
+        return InternalServerError("create", "reset token", res)
       }
 
       const userToken = await UserToken.readByUserId(user_id)
@@ -143,12 +144,13 @@ export const sessions: Controller = {
       if (!userToken) {
         const newUserToken = await UserToken.create({
           user_id,
-          access_token: '',
-          refresh_token: ''
+          reset_password_token,
+          reset_password_token_expires_at
         })
 
         !newUserToken && InternalServerError("create", "user token", res)
 
+      } else {
         const updatedUserToken = await UserToken.updateResetToken({
           user_id,
           reset_password_token,
@@ -158,30 +160,67 @@ export const sessions: Controller = {
         !updatedUserToken && InternalServerError("update", "reset token", res)
       }
 
-      const resetURL = `${clientURL}/passwordReset?token=${reset_password_token}&userId=${user_id}`
-      const patientName = patient ? `${patient?.firstname} ${patient?.lastname}` : 'Patient'
+      const resetURL = `${clientURL}/password/reset?token=${reset_password_token}&userId=${user_id}`
+      console.log(resetURL)
 
-      requestMail({
-        mailType: MailTypes.RESET_PASS_REQUESTED,
-        to: { 
-          email: user!.email,
-          name: patientName,
-          id: user!.id
-        },
-        html: `<p>Dear ${patientName},<br/><br/>
-        You have requested a password reset for <a href="https://peaceofmindspine.com">peaceofmindspine.com</a> account. Please click on the following link <a href=${resetURL}>${resetURL}</a> to reset your password.</p>`
-      })
+      const patientName = patient ? `${patient?.firstname} ${patient?.lastname}` : 'Patient'
+      // sendEmail({
+      //   mailType: MailTypes.RESET_PASS_REQUESTED,
+      //   to: { 
+      //     email: user!.email,
+      //     name: patientName,
+      //     id: user!.id
+      //   },
+      //   html: `<p>Dear ${patientName},<br/><br/>
+      //   You have requested a password reset for <a href="https://peaceofmindspine.com">peaceofmindspine.com</a> account. Please click on the following <a href=${resetURL} target="_self">Link</a> to reset your password. Please note, the link will be valid for 1 hour. </p>`
+      // })
 
       res.status(201).json({ 
-        message: "Password reset successfully requested", 
+        message: "Password reset successfully requested",
         data: {
-          user_id, 
-          reset_password_token,   
+          user_id,
+          reset_password_token,
           reset_password_token_expires_at
         }
       })
     } catch (err: Error | unknown) {
       InternalServerError("update", "password", res, err)
+    }
+  },
+
+  renderResetPassword: async(req, res) => {
+    try {
+      const { token, userId } = req.query
+
+      if (!token || !userId) {
+        BadRequestError("token or userId", res)
+      }
+
+      const userToken = await UserToken.readByUserId(parseInt(userId))
+
+      if (!userToken) {
+        NotFoundError("token", res)
+      }
+
+      const exp = new Date(userToken.reset_password_token_expires_at!)
+
+      console.log(userToken)
+      console.log(exp)
+
+      const isTokenExpired = exp && (exp < new Date(Date.now()))
+
+      console.log('isTokenExpired', isTokenExpired)
+
+      if (isTokenExpired) {
+        BadRequestError("expired token", res)
+      }
+
+      if (verifyCSPRNG(userToken.reset_password_token!, token)) {
+        res.status(200).send(true) 
+      }
+      
+    } catch (err: Error | unknown) {
+      InternalServerError("get", "reset password token", res, err)
     }
   },
 
@@ -220,6 +259,19 @@ export const sessions: Controller = {
         NotFoundError("user token", res)
       }
 
+      const exp = new Date(userToken.reset_password_token_expires_at!)
+      const isTokenExpired = exp && (exp < new Date(Date.now()))
+      
+      if (isTokenExpired) {
+        BadRequestError("expired token", res)
+      }
+
+      const isValid = await argon2.verify(reset_password_token, userToken.reset_password_token!)
+      console.log(isValid)
+      if (!isValid) {
+        BadRequestError("token", res)
+      }
+
       const payload = { password: hashedPass }
       const user = await User.update({ userId, payload })
       const patient = user && await Patient.readByUserId(userId)
@@ -228,18 +280,13 @@ export const sessions: Controller = {
         InternalServerError("update", "password", res)
       }
 
-      const exp = userToken.reset_password_token_expires_at
-      const isTokenUnexpired = exp && (exp > new Date(Date.now()))
-      
-      if (reset_password_token === userToken.reset_password_token && isTokenUnexpired) {
-        await UserToken.updateResetToken({ 
-          user_id,
-          reset_password_token: undefined,
-          reset_password_token_expires_at: undefined
-        })
-      }
+      await UserToken.updateResetToken({ 
+        user_id,
+        reset_password_token: undefined,
+        reset_password_token_expires_at: undefined
+      })
 
-      requestMail({
+      sendEmail({
         mailType: MailTypes.RESET_PASS_COMPLETED,
         to: { 
           email: user!.email, 

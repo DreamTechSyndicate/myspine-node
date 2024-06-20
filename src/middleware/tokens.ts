@@ -36,6 +36,32 @@ export const generateToken = ({ userId, expiresIn }: { userId: number, expiresIn
   return jwt.sign(payload, privateKey, options)
 }
 
+// TODO: Either remove or put back
+// export const generateResetPasswordToken = async() => {
+//   const resetToken = crypto.randomBytes(20).toString('hex')
+//   const expirationDate = new Date()
+
+//   expirationDate.setHours(expirationDate.getHours() + 1) // Expires in 24h
+
+//   return {
+//     reset_password_token: await argon2.hash(resetToken),
+//     reset_password_token_expires_at: expirationDate
+//   }
+// }
+
+export const generateResetPasswordToken = () => {
+  const array = new Uint32Array(4);
+  crypto.getRandomValues(array);
+
+  const token = Array.from(array).map(x => x.toString(16).padStart(8, '0')).join('');
+  const expiresAt = new Date(Date.now() + 3600000).toISOString() // expires in 1 hour
+
+  return {
+    reset_password_token: token,
+    reset_password_token_expires_at: expiresAt
+  }
+}
+
 export const verifyToken = async (token: string): Promise<JwtPayload | string> => {
   return await new Promise<JwtPayload>((resolve, reject) => {
     jwt.verify(token, publicKey, (err, decoded) => {
@@ -71,18 +97,6 @@ export const requireJwt = async(req: any, res: any, next: any) => {
   }
 }
 
-export const generateResetPasswordToken = async() => {
-  const resetToken = crypto.randomBytes(20).toString('hex')
-  const expirationDate = new Date()
-
-  expirationDate.setHours(expirationDate.getHours() + 24) // Expires in 24h
-
-  return {
-    reset_password_token: await argon2.hash(resetToken),
-    reset_password_token_expires_at: expirationDate
-  }
-}
-
 export const handleInitialTokens = async(userId: number, req: any, res: any): Promise<Partial<IUserToken> | undefined> => {
   const accessToken = generateToken({ userId, expiresIn: '1h' }) 
   const refreshToken = generateToken({ userId, expiresIn: '1d' }) // Stay logged-in, to obtain new access tokens once expired
@@ -91,7 +105,7 @@ export const handleInitialTokens = async(userId: number, req: any, res: any): Pr
     const existingTokens = await UserToken.readByUserId(userId)
 
     if (existingTokens) {
-      if (existingTokens.access_token_expires_at > new Date(Date.now())) {        
+      if (new Date(existingTokens.access_token_expires_at) > new Date()) {        
         return { 
           access_token: existingTokens.access_token, 
           refresh_token: existingTokens.refresh_token
@@ -141,12 +155,11 @@ export const handleTokenRefresh = async(userId: number, req: any, res: any) => {
     }
 
     // Generate a new access_token if the refresh_token has not already expired
-    if (userToken.refresh_token_expires_at > new Date(Date.now())) {
-
+    if (new Date(userToken.refresh_token_expires_at) > new Date()) {
       const updatedTokens = {
         access_token: generateToken({ userId: userToken.user_id, expiresIn: '1h' }),
-        access_token_expires_at: new Date(Date.now() + accessTokenCookieOptions.maxAge),
-        refresh_token_expires_at: new Date(Date.now() + refreshTokenCookieOptions.maxAge)
+        access_token_expires_at: new Date(Date.now() + accessTokenCookieOptions.maxAge).toISOString(),
+        refresh_token_expires_at: new Date(Date.now() + refreshTokenCookieOptions.maxAge).toISOString()
       }
         
       const response = await UserToken.update({ 

@@ -78,7 +78,7 @@ export const getMailConfigs = (
   }
 };
 
-export const requestMail = async ({
+export const sendEmail = async ({
   mailType,
   from,
   to,

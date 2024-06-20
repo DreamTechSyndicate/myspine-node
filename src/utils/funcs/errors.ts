@@ -16,7 +16,7 @@ const createError = ({ res, statusCode, message, error }: CreateErrorOptions) =>
 }
 
 export const BadRequestError = (category: string, res: any, error?: Error | unknown) => {
- const message = `${capitalizeFirstLetter(category)} Required`
+ const message = `Invalid ${capitalizeFirstLetter(category)}`
   createError({ res, statusCode: 400, message, error})
 }
 

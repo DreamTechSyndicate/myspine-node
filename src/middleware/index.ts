@@ -18,6 +18,6 @@ export {
   verifyToken
 } from './tokens'
 export {
-  requestMail,
+  sendEmail,
   MailTypes
 } from './mailerOptions'

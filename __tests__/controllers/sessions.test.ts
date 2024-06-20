@@ -88,7 +88,7 @@ describe("sessions controller", () => {
         .expect(400)
 
         expect(res.status).toBe(400)
-        expect(res.body.message).toEqual("Email, Password Required")
+        expect(res.body.message).toEqual("Invalid Email, Password")
       })
   })
 

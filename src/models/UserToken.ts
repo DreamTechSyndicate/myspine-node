@@ -9,11 +9,11 @@ export interface IUserToken {
   access_token: string,
   refresh_token: string,
   reset_password_token?: string,
-  access_token_expires_at: Date,
-  refresh_token_expires_at: Date,
-  reset_password_token_expires_at?: Date,
-  created_at: Date,
-  updated_at: Date
+  access_token_expires_at: string,
+  refresh_token_expires_at: string,
+  reset_password_token_expires_at?: string,
+  created_at: string,
+  updated_at: string
 }
 
 export interface UserTokenResponse extends IUserToken {
@@ -28,7 +28,8 @@ export class UserToken {
     const {
       user_id,
       access_token,
-      refresh_token
+      refresh_token,
+      refresh_token_expires_at
     } = tokenBody
 
     const [tokens] = await db(USER_TOKENS_TABLE)
@@ -36,8 +37,8 @@ export class UserToken {
       user_id,
       access_token,
       refresh_token,
-      access_token_expires_at: new Date(Date.now() + accessTokenCookieOptions.maxAge),
-      refresh_token_expires_at: new Date(Date.now() + refreshTokenCookieOptions.maxAge)
+      access_token_expires_at: access_token && new Date(Date.now() + accessTokenCookieOptions.maxAge).toISOString(),
+      refresh_token_expires_at: (refresh_token && !refresh_token_expires_at) ? new Date(Date.now() + refreshTokenCookieOptions.maxAge).toISOString() : refresh_token_expires_at
     })
     .returning('*')
 
@@ -68,7 +69,7 @@ export class UserToken {
   static async updateResetToken({ user_id, reset_password_token, reset_password_token_expires_at }: { 
     user_id: number,
     reset_password_token?: string,
-    reset_password_token_expires_at?: Date, 
+    reset_password_token_expires_at?: string, 
   }): Promise<IUserToken> {
     await db(USER_TOKENS_TABLE)
       .where('user_id', '=', user_id)

@@ -4,13 +4,13 @@ import {
   NotFoundError,
 } from '../utils/funcs/errors'
 import { Controller } from '../utils/types/generic'
-import { Patient, User, IPatient, IUser } from '../models'
+import { Patient, User, IPatient } from '../models'
 import { containsMissingFields } from '../utils/funcs/validation'
 import { 
   capitalizeFirstLetter, 
   sanitizeEmail 
 } from '../utils/funcs/strings'
-import { MailTypes, requestMail } from '../middleware'
+import { MailTypes, sendEmail } from '../middleware'
 
 export const patients: Controller = {
   getPatientById: async (req, res) => {
@@ -80,7 +80,7 @@ export const patients: Controller = {
       }
 
       if (patient) {
-        requestMail({
+        sendEmail({
           mailType: MailTypes.APPT_REQUESTED,
           from: {
             email: patient.email,
