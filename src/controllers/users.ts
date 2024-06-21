@@ -16,7 +16,7 @@ export const users: Controller = {
       const users = await User.readAll()
       res.status(200).json(users)
     } catch (err) {
-      InternalServerError("get", "users", res, err)
+      InternalServerError("read", "users", res, err)
     }
   },
 
@@ -31,7 +31,7 @@ export const users: Controller = {
         NotFoundError("user", res)
       }
     } catch (err: unknown) {
-      InternalServerError("get", "user", res, err)
+      InternalServerError("read", "user", res, err)
     }
   },
 

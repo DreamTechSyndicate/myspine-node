@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import fs from 'fs'
 import jwt, { SignOptions } from 'jsonwebtoken'
 import { 
+  BadRequestError,
   InternalServerError,
   UnauthorizedRequestError 
 } from '../utils/funcs/errors'
@@ -12,7 +13,6 @@ import {
   accessTokenCookieOptions, 
   refreshTokenCookieOptions 
 } from './cookieOptions'
-import argon2 from 'argon2'
 
 export const privateKey = crypto.createPrivateKey({
   key: fs.readFileSync(process.env.PRIVATE_KEY_PATH 
@@ -35,19 +35,6 @@ export const generateToken = ({ userId, expiresIn }: { userId: number, expiresIn
 
   return jwt.sign(payload, privateKey, options)
 }
-
-// TODO: Either remove or put back
-// export const generateResetPasswordToken = async() => {
-//   const resetToken = crypto.randomBytes(20).toString('hex')
-//   const expirationDate = new Date()
-
-//   expirationDate.setHours(expirationDate.getHours() + 1) // Expires in 24h
-
-//   return {
-//     reset_password_token: await argon2.hash(resetToken),
-//     reset_password_token_expires_at: expirationDate
-//   }
-// }
 
 export const generateResetPasswordToken = () => {
   const array = new Uint32Array(4);
@@ -97,41 +84,44 @@ export const requireJwt = async(req: any, res: any, next: any) => {
   }
 }
 
-export const handleInitialTokens = async(userId: number, req: any, res: any): Promise<Partial<IUserToken> | undefined> => {
-  const accessToken = generateToken({ userId, expiresIn: '1h' }) 
-  const refreshToken = generateToken({ userId, expiresIn: '1d' }) // Stay logged-in, to obtain new access tokens once expired
-  
+export const handleInitialTokens = async(userId: number, req: any, res: any): Promise<Partial<IUserToken> | undefined | void> => {
   try {
-    const existingTokens = await UserToken.readByUserId(userId)
-
-    if (existingTokens) {
-      if (new Date(existingTokens.access_token_expires_at) > new Date()) {        
-        return { 
-          access_token: existingTokens.access_token, 
-          refresh_token: existingTokens.refresh_token
-        }
-      } else {
-        const tokens = await handleTokenRefresh(userId, req, res)
-        return {
-          access_token: tokens?.access_token,
-          refresh_token: tokens?.refresh_token
-        }
-      }
+    if (!req.signedCookies.refreshToken) {
+      UnauthorizedRequestError("refresh token", res);
     }
 
-    const tokens = await UserToken.create({
-      user_id: userId,
-      access_token: accessToken,
-      refresh_token: refreshToken
-    })
+    const existingTokens = await UserToken.readByUserId(userId)
+    console.log('existing tokens:', existingTokens)
 
-    if (!tokens) {
-      InternalServerError("create", "tokens", res)
-      return;
+    if (!existingTokens) {
+      return BadRequestError("user token data", res)
+    }
+
+    if (existingTokens.refresh_token) {
+      const isExpired = new Date(existingTokens.refresh_token_expires_at) > new Date(Date.now())
+
+      return isExpired 
+        ? UnauthorizedRequestError("refresh_token", res) 
+        : {
+          access_token: existingTokens.access_token,
+          refresh_token: existingTokens.refresh_token,
+        }
     } else {
-      return { 
-        access_token: tokens.access_token, 
-        refresh_token: tokens.refresh_token 
+      const updatedTokens = {
+        access_token: generateToken({ userId, expiresIn: '1h' }),
+        refresh_token: generateToken({ userId, expiresIn: '1d' }),
+        access_token_expires_at: new Date(Date.now() + accessTokenCookieOptions.maxAge).toISOString(),
+        refresh_token_expires_at: new Date(Date.now() + refreshTokenCookieOptions.maxAge).toISOString()
+      }
+
+      await UserToken.update({
+        user_id: userId,
+        payload: updatedTokens
+      })
+
+      return {
+        access_token: updatedTokens.access_token,
+        refresh_token: updatedTokens.refresh_token
       }
     }
   } catch (err) {
@@ -139,48 +129,6 @@ export const handleInitialTokens = async(userId: number, req: any, res: any): Pr
     return undefined
   }
 }
-
-export const handleTokenRefresh = async(userId: number, req: any, res: any) => {
-  const refreshToken = req.signedCookies.refreshToken
-
-  if (!refreshToken) {
-    return UnauthorizedRequestError("refresh token", res);
-  }
-
-  try {
-    const userToken = await UserToken.readByRefreshToken(refreshToken);
-
-    if (!userToken) {
-      return UnauthorizedRequestError("refresh token", res);
-    }
-
-    // Generate a new access_token if the refresh_token has not already expired
-    if (new Date(userToken.refresh_token_expires_at) > new Date()) {
-      const updatedTokens = {
-        access_token: generateToken({ userId: userToken.user_id, expiresIn: '1h' }),
-        access_token_expires_at: new Date(Date.now() + accessTokenCookieOptions.maxAge).toISOString(),
-        refresh_token_expires_at: new Date(Date.now() + refreshTokenCookieOptions.maxAge).toISOString()
-      }
-        
-      const response = await UserToken.update({ 
-        user_id: userId, 
-        payload: updatedTokens
-      })
-
-      !response && InternalServerError("update", "user token", res)
-    
-      return { 
-        access_token: updatedTokens.access_token,
-        refresh_token: refreshToken
-      }
-    } else {
-      res.redirect('/login')
-      return undefined
-    }
-  } catch (err) {
-    InternalServerError("refresh", "token", res, err);
-  }
-};
 
 export const tokenStorage = {
   setTokens: ({ 

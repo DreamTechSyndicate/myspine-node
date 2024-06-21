@@ -19,9 +19,14 @@ export const containsMissingFields = ({ payload, requiredFields }: {
   return undefined
 }
 
-export const verifyCSPRNG = (storedToken: string, providedToken: string) => {
+export const verifyCSPRNG = ({ storedToken, providedToken }: { storedToken?: string, providedToken?: string }) => {
+  if (!storedToken || !providedToken) {
+    return false
+  }
+
   if (storedToken.length !== providedToken.length) {
     return false
   }
+  
   return crypto.timingSafeEqual(Buffer.from(storedToken), Buffer.from(providedToken))
 }

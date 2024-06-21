@@ -11,7 +11,6 @@ export {
   generateToken,
   handleInitialTokens,
   handleLogoutTokens,
-  handleTokenRefresh,
   generateResetPasswordToken,
   requireJwt,
   tokenStorage,

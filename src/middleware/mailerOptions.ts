@@ -50,7 +50,7 @@ const mailTemplates: MailTemplates = {
     // from: `"Peace of Mind Spine.com" <${SMTP_EMAIL}>`,
     from: { email: SMTP_EMAIL! },
     subject: "Successfully reset password",
-    html: `<p>Done! You have successfully reset your password for <a href="https://peaceofmindspine.com">peaceofmindspine.com</a></p>`
+    html: `<p>Done! Now you can login with the new password on <a href="https://peaceofmindspine.com">peaceofmindspine.com</a></p>`
   },
   appointment_requested: {
     to: { email: SMTP_EMAIL! },

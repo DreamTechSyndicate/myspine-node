@@ -24,7 +24,7 @@ export const patients: Controller = {
 
       res.status(200).json(patient)
     } catch (err: unknown) {
-      InternalServerError("get", "patient", res, err)
+      InternalServerError("read", "patient", res, err)
     }
   },
 

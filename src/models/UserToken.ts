@@ -1,7 +1,6 @@
 import knex from 'knex'
 import knexConfig from '../../knexfile'
 import { JwtPayload } from "src/utils/types/generic"
-import { accessTokenCookieOptions, refreshTokenCookieOptions } from '../middleware/cookieOptions'
 
 export interface IUserToken {
   id: number,
@@ -29,7 +28,10 @@ export class UserToken {
       user_id,
       access_token,
       refresh_token,
-      refresh_token_expires_at
+      reset_password_token,
+      access_token_expires_at,
+      refresh_token_expires_at,
+      reset_password_token_expires_at
     } = tokenBody
 
     const [tokens] = await db(USER_TOKENS_TABLE)
@@ -37,8 +39,10 @@ export class UserToken {
       user_id,
       access_token,
       refresh_token,
-      access_token_expires_at: access_token && new Date(Date.now() + accessTokenCookieOptions.maxAge).toISOString(),
-      refresh_token_expires_at: (refresh_token && !refresh_token_expires_at) ? new Date(Date.now() + refreshTokenCookieOptions.maxAge).toISOString() : refresh_token_expires_at
+      reset_password_token,
+      access_token_expires_at,
+      refresh_token_expires_at,
+      reset_password_token_expires_at
     })
     .returning('*')
 
@@ -76,8 +80,8 @@ export class UserToken {
       .update<Partial<IUserToken>>({
         access_token: undefined,
         refresh_token: undefined,
-        reset_password_token,
-        reset_password_token_expires_at
+        reset_password_token: reset_password_token || null,
+        reset_password_token_expires_at: reset_password_token_expires_at || null
       })
 
     const updatedUserToken = await UserToken.readByUserId(user_id)

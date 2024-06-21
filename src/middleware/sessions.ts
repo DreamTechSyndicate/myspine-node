@@ -59,7 +59,7 @@ export const handleSessionData = async(userId: number, req: any, res: any) => {
 
   if (!sessionData) {
     console.warn('Undefined request session')
-    InternalServerError("get", "session", res)
+    InternalServerError("read", "session", res)
   }
 
   sessionData.logged_in = true;

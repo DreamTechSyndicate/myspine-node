@@ -44,7 +44,7 @@ export const sessions: Controller = {
       const session = await Session.readBySessionId(sessionId)
       res.status(201).json(session)
     } catch (err) {
-      InternalServerError("get", "session data", res, err)
+      InternalServerError("read", "session data", res, err)
     }
   },
 
@@ -74,11 +74,13 @@ export const sessions: Controller = {
       }
 
       const userId = user!.id
-      const tokens: Partial<IUserToken> | undefined = await handleInitialTokens(userId, req, res)
+      const tokens: Partial<IUserToken> | undefined | void = await handleInitialTokens(userId, req, res)
       const sessions: SessionData | undefined = await handleSessionData(userId, req, res)
+
+      console.log('tokens:', tokens, 'sessions:', sessions)
       
       if (tokens?.access_token && tokens?.refresh_token && sessions) {
-        const decoded = await verifyToken(tokens.access_token, )
+        const decoded = await verifyToken(tokens.access_token)
 
         tokenStorage.setTokens({
           res,
@@ -99,7 +101,7 @@ export const sessions: Controller = {
 
   logout: async(req, res) => {
     try {
-      const userId = parseInt(req.params?.userId)
+      const userId = parseInt(req.params?.userId) 
       
       await handleLogoutTokens(userId, res)
       
@@ -122,7 +124,7 @@ export const sessions: Controller = {
 
     try {
       const user = await User.readByEmail(sanitizeEmail(email))
-      const patient = user && await Patient.readByUserId(user.id)
+      // const patient = user && await Patient.readByUserId(user.id)
 
       if (!user) {
         return BadRequestError("email", res)
@@ -148,7 +150,8 @@ export const sessions: Controller = {
           reset_password_token_expires_at
         })
 
-        !newUserToken && InternalServerError("create", "user token", res)
+        !newUserToken && 
+        InternalServerError("create", "user token", res)
 
       } else {
         const updatedUserToken = await UserToken.updateResetToken({
@@ -157,13 +160,14 @@ export const sessions: Controller = {
           reset_password_token_expires_at
         })
 
-        !updatedUserToken && InternalServerError("update", "reset token", res)
+        !updatedUserToken && 
+        InternalServerError("update", "reset token", res)
       }
 
       const resetURL = `${clientURL}/password/reset?token=${reset_password_token}&userId=${user_id}`
       console.log(resetURL)
 
-      const patientName = patient ? `${patient?.firstname} ${patient?.lastname}` : 'Patient'
+      // const patientName = patient ? `${patient?.firstname} ${patient?.lastname}` : 'Patient'
       // sendEmail({
       //   mailType: MailTypes.RESET_PASS_REQUESTED,
       //   to: { 
@@ -184,11 +188,11 @@ export const sessions: Controller = {
         }
       })
     } catch (err: Error | unknown) {
-      InternalServerError("update", "password", res, err)
+      InternalServerError("read", "password reset", res, err)
     }
   },
 
-  renderResetPassword: async(req, res) => {
+  renderPasswordReset: async(req, res) => {
     try {
       const { token, userId } = req.query
 
@@ -199,28 +203,27 @@ export const sessions: Controller = {
       const userToken = await UserToken.readByUserId(parseInt(userId))
 
       if (!userToken) {
-        NotFoundError("token", res)
+        return NotFoundError("token", res)
       }
 
       const exp = new Date(userToken.reset_password_token_expires_at!)
-
-      console.log(userToken)
-      console.log(exp)
-
       const isTokenExpired = exp && (exp < new Date(Date.now()))
 
-      console.log('isTokenExpired', isTokenExpired)
-
       if (isTokenExpired) {
-        BadRequestError("expired token", res)
+        return BadRequestError("expired token", res)
       }
 
-      if (verifyCSPRNG(userToken.reset_password_token!, token)) {
+      const isValid = verifyCSPRNG({
+        storedToken: userToken.reset_password_token,
+        providedToken: token
+      })
+
+      if (isValid) {
         res.status(200).send(true) 
       }
       
     } catch (err: Error | unknown) {
-      InternalServerError("get", "reset password token", res, err)
+      InternalServerError("read", "reset password token", res, err)
     }
   },
 
@@ -238,42 +241,44 @@ export const sessions: Controller = {
       })
 
       if (missingFields) {
-        BadRequestError(missingFields, res)
+        return BadRequestError(missingFields, res)
       }
 
       const hashedPass: string | undefined = await argon2.hash(new_password)
   
       if (!hashedPass) {
-        ExternalServerError("argon 2 hashing", res)
+        return ExternalServerError("argon 2 hashing", res)
       }
 
       const userId = parseInt(user_id)
       const userById = await User.readById(userId)
-      const userToken = await UserToken.readByUserId(userId)
 
       if (!userById) {
-        NotFoundError("user", res)
+        return NotFoundError("user", res)
       }
 
-      if (!userToken) {
-        NotFoundError("user token", res)
+      const userToken = await UserToken.readByUserId(userId)
+
+      if (!userToken.reset_password_token) {
+        return NotFoundError("user token", res)
       }
 
       const exp = new Date(userToken.reset_password_token_expires_at!)
       const isTokenExpired = exp && (exp < new Date(Date.now()))
       
       if (isTokenExpired) {
-        BadRequestError("expired token", res)
+        return BadRequestError("expired token", res)
       }
 
-      const isValid = await argon2.verify(reset_password_token, userToken.reset_password_token!)
-      console.log(isValid)
+      const isValid = verifyCSPRNG({ storedToken: userToken.reset_password_token, providedToken: reset_password_token })
+
       if (!isValid) {
-        BadRequestError("token", res)
+        return BadRequestError("token", res)
       }
 
       const payload = { password: hashedPass }
       const user = await User.update({ userId, payload })
+
       const patient = user && await Patient.readByUserId(userId)
 
       if (!user) {
@@ -286,14 +291,14 @@ export const sessions: Controller = {
         reset_password_token_expires_at: undefined
       })
 
-      sendEmail({
-        mailType: MailTypes.RESET_PASS_COMPLETED,
-        to: { 
-          email: user!.email, 
-          name: `${patient?.firstname} ${patient?.lastname}`,
-          id: user.id
-        }
-      })
+      // sendEmail({
+      //   mailType: MailTypes.RESET_PASS_COMPLETED,
+      //   to: { 
+      //     email: user!.email, 
+      //     name: `${patient?.firstname} ${patient?.lastname}`,
+      //     id: user.id
+      //   }
+      // })
 
       res.status(200).json({ message: "Password reset successfully" })
     } catch (err: Error | unknown) {
