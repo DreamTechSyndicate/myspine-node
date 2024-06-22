@@ -29,7 +29,7 @@ export const isAuthenticated = (signedCookies: { Authorization: string, session:
   let isAuthenticated;
   if (signedCookies) {
   const { Authorization, session, accessToken, refreshToken } = signedCookies
-    isAuthenticated = Authorization && session && accessToken && refreshToken 
+    isAuthenticated = !!Authorization && !!session && !!accessToken && !!refreshToken 
   }
   return isAuthenticated
 }
