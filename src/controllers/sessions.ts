@@ -11,12 +11,13 @@ import {
   IUserToken, 
   Patient, 
   User, 
-  UserToken
+  UserToken,
 } from '../models'
 import { 
   handleInitialTokens,
   handleLogoutTokens,
   handleSessionData,
+  isAuthenticated,
   tokenStorage,
   MailTypes,
   verifyToken
@@ -89,7 +90,7 @@ export const sessions: Controller = {
       
         res.status(201).json({
           message: "Successfully logged in",
-          data: user
+          data: { ...user, authenticated: isAuthenticated(req.signedCookies) }
         })
       }
     } catch (err: unknown) {

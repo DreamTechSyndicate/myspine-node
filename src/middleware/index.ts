@@ -8,10 +8,11 @@ export {
   sessionStoreOptions, 
 } from './sessions'
 export { 
+  generateResetPasswordToken,
   generateToken,
   handleInitialTokens,
   handleLogoutTokens,
-  generateResetPasswordToken,
+  isAuthenticated,
   requireJwt,
   tokenStorage,
   verifyToken

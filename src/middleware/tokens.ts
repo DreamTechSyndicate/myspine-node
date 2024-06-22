@@ -2,7 +2,6 @@ import crypto from 'crypto'
 import fs from 'fs'
 import jwt, { SignOptions } from 'jsonwebtoken'
 import { 
-  BadRequestError,
   InternalServerError,
   UnauthorizedRequestError 
 } from '../utils/funcs/errors'
@@ -25,6 +24,15 @@ const publicKey = crypto.createPublicKey({
   || './certs/local-key.pem', 'utf-8'),
   format: 'pem'
 })
+
+export const isAuthenticated = (signedCookies: { Authorization: string, session: string, accessToken: string, refreshToken: string }) => {
+  let isAuthenticated;
+  if (signedCookies) {
+  const { Authorization, session, accessToken, refreshToken } = signedCookies
+    isAuthenticated = Authorization && session && accessToken && refreshToken 
+  }
+  return isAuthenticated
+}
 
 export const generateToken = ({ userId, expiresIn }: { userId: number, expiresIn?: string }) => {
   const payload =  { id: v4(), userId }
@@ -105,7 +113,7 @@ export const requireJwt = async(req: any, res: any, next: any) => {
 export const handleInitialTokens = async(userId: number, req: any, res: any): Promise<Partial<IUserToken> | undefined | void> => {
   try {
     if (!req.signedCookies.refreshToken) {
-      UnauthorizedRequestError("refresh token", res);
+      return UnauthorizedRequestError("refresh token cookie", res);
     }
     
     const existingTokens = await UserToken.readByUserId(userId)
