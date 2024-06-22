@@ -86,7 +86,7 @@ export const requireJwt = async(req: any, res: any, next: any) => {
       next()
     } else {
       const authorizationHeader = req.headers.authorization
-
+ 
       if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
         throw new Error('Authorization header is missing or invalid');
       }
@@ -107,49 +107,58 @@ export const handleInitialTokens = async(userId: number, req: any, res: any): Pr
     if (!req.signedCookies.refreshToken) {
       UnauthorizedRequestError("refresh token", res);
     }
-
+    
     const existingTokens = await UserToken.readByUserId(userId)
-
-    if (!existingTokens) {
-      return BadRequestError("user token", res)
+    const newTokens = {
+      access_token: generateToken({ userId, expiresIn: '1h' }),
+      refresh_token: generateToken({ userId, expiresIn: '1d' }),
+      access_token_expires_at: new Date(Date.now() + accessTokenCookieOptions.maxAge).toISOString(),
+      refresh_token_expires_at: new Date(Date.now() + refreshTokenCookieOptions.maxAge).toISOString()
     }
 
-    const {
-      refresh_token,
-      access_token_expires_at, 
-      refresh_token_expires_at 
-    } = existingTokens
-
-    if (!refresh_token) {
-        const updatedTokens = {
-        access_token: generateToken({ userId, expiresIn: '1h' }),
-        refresh_token: generateToken({ userId, expiresIn: '1d' }),
-        access_token_expires_at: new Date(Date.now() + accessTokenCookieOptions.maxAge).toISOString(),
-        refresh_token_expires_at: new Date(Date.now() + refreshTokenCookieOptions.maxAge).toISOString()
-      }
-
-      await UserToken.update({
+    if (!existingTokens) {
+      await UserToken.create({
         user_id: userId,
-        payload: updatedTokens
+        ...newTokens
       })
 
       return {
-        access_token: updatedTokens.access_token,
-        refresh_token: updatedTokens.refresh_token
+        access_token: newTokens.access_token,
+        refresh_token: newTokens.refresh_token
       }
     }
+    
+    if (existingTokens) {
+      const {
+        refresh_token,
+        access_token_expires_at,
+        refresh_token_expires_at
+      } = existingTokens
 
-    const isAccessTokenExpired = new Date(access_token_expires_at) < new Date(Date.now())
-    const isRefreshTokenExpired = new Date(refresh_token_expires_at) < new Date(Date.now())
-
-    if (isAccessTokenExpired) {
-      return isRefreshTokenExpired
-        ? UnauthorizedRequestError("refresh token", res)
-        : await generateNewAccessToken(userId, existingTokens)
-    } else {
-      return {
-        access_token: existingTokens.access_token,
-        refresh_token: existingTokens.refresh_token
+      if (!refresh_token) {
+        await UserToken.update({
+          user_id: userId,
+          payload: newTokens
+        })
+  
+        return {
+          access_token: newTokens.access_token,
+          refresh_token: newTokens.refresh_token
+        }
+      }
+  
+      const isAccessTokenExpired = new Date(access_token_expires_at) < new Date(Date.now())
+      const isRefreshTokenExpired = new Date(refresh_token_expires_at) < new Date(Date.now())
+  
+      if (isAccessTokenExpired) {
+        return isRefreshTokenExpired
+          ? UnauthorizedRequestError("refresh token", res)
+          : await generateNewAccessToken(userId, existingTokens)
+      } else {
+        return {
+          access_token: existingTokens.access_token,
+          refresh_token: existingTokens.refresh_token
+        }
       }
     }
   } catch (err) {
