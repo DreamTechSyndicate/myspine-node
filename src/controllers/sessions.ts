@@ -76,8 +76,6 @@ export const sessions: Controller = {
       const userId = user!.id
       const tokens: Partial<IUserToken> | undefined | void = await handleInitialTokens(userId, req, res)
       const sessions: SessionData | undefined = await handleSessionData(userId, req, res)
-
-      console.log('tokens:', tokens, 'sessions:', sessions)
       
       if (tokens?.access_token && tokens?.refresh_token && sessions) {
         const decoded = await verifyToken(tokens.access_token)
@@ -167,6 +165,7 @@ export const sessions: Controller = {
       const resetURL = `${clientURL}/password/reset?token=${reset_password_token}&userId=${user_id}`
       console.log(resetURL)
 
+      // TODO: put back once finalized
       // const patientName = patient ? `${patient?.firstname} ${patient?.lastname}` : 'Patient'
       // sendEmail({
       //   mailType: MailTypes.RESET_PASS_REQUESTED,

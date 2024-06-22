@@ -49,6 +49,24 @@ export const generateResetPasswordToken = () => {
   }
 }
 
+const generateNewAccessToken = async(userId: number, existingTokens: any) => {
+  const newAccessToken = generateToken({ userId, expiresIn: '1h' })
+  const newAccessTokenExpiresAt = new Date(Date.now() + accessTokenCookieOptions.maxAge).toISOString()
+
+  await UserToken.update({
+    user_id: userId,
+    payload: {
+      access_token: newAccessToken,
+      access_token_expires_at: newAccessTokenExpiresAt
+    }
+  })
+
+  return {
+    access_token: newAccessToken,
+    refresh_token: existingTokens.refresh_token
+  }
+}
+
 export const verifyToken = async (token: string): Promise<JwtPayload | string> => {
   return await new Promise<JwtPayload>((resolve, reject) => {
     jwt.verify(token, publicKey, (err, decoded) => {
@@ -91,23 +109,19 @@ export const handleInitialTokens = async(userId: number, req: any, res: any): Pr
     }
 
     const existingTokens = await UserToken.readByUserId(userId)
-    console.log('existing tokens:', existingTokens)
 
     if (!existingTokens) {
-      return BadRequestError("user token data", res)
+      return BadRequestError("user token", res)
     }
 
-    if (existingTokens.refresh_token) {
-      const isExpired = new Date(existingTokens.refresh_token_expires_at) > new Date(Date.now())
+    const {
+      refresh_token,
+      access_token_expires_at, 
+      refresh_token_expires_at 
+    } = existingTokens
 
-      return isExpired 
-        ? UnauthorizedRequestError("refresh_token", res) 
-        : {
-          access_token: existingTokens.access_token,
-          refresh_token: existingTokens.refresh_token,
-        }
-    } else {
-      const updatedTokens = {
+    if (!refresh_token) {
+        const updatedTokens = {
         access_token: generateToken({ userId, expiresIn: '1h' }),
         refresh_token: generateToken({ userId, expiresIn: '1d' }),
         access_token_expires_at: new Date(Date.now() + accessTokenCookieOptions.maxAge).toISOString(),
@@ -122,6 +136,20 @@ export const handleInitialTokens = async(userId: number, req: any, res: any): Pr
       return {
         access_token: updatedTokens.access_token,
         refresh_token: updatedTokens.refresh_token
+      }
+    }
+
+    const isAccessTokenExpired = new Date(access_token_expires_at) < new Date(Date.now())
+    const isRefreshTokenExpired = new Date(refresh_token_expires_at) < new Date(Date.now())
+
+    if (isAccessTokenExpired) {
+      return isRefreshTokenExpired
+        ? UnauthorizedRequestError("refresh token", res)
+        : await generateNewAccessToken(userId, existingTokens)
+    } else {
+      return {
+        access_token: existingTokens.access_token,
+        refresh_token: existingTokens.refresh_token
       }
     }
   } catch (err) {
