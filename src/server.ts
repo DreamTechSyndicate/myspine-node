@@ -21,6 +21,7 @@ import {
 
 export const app: Application = express()
 
+// TODO: put back for prod
 // const credentials = {
 //   key: fs.readFileSync(process.env.PRIVATE_KEY_PATH 
 //     || './certs/local-key.pem', 'utf8'),
@@ -36,9 +37,7 @@ const port = process.env.PORT
 app.use(express.json())
 app.use(cookieParser(process.env.SESSION_SECRET!))
 app.use(cors(corsOptions))
-app.use("/login", (
-  session(sessionOptions)
-))
+app.use( session(sessionOptions))
 
 routes.forEach(({ path, router }) => {
   app.use(path, router)
@@ -50,6 +49,7 @@ app.use("/", (
   helmet(helmetOptions)
 ))
 
+// TODO: put back for prod
 // export const server = https.createServer(credentials, app);
 export const server = http.createServer(app)
 

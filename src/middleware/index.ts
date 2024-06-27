@@ -3,6 +3,7 @@ export { corsOptions } from './corsOptions'
 export { helmetOptions } from './helmetOptions'
 export { limiterOptions } from './limiterOptions'
 export { 
+  isAuthenticated,
   handleSessionData,
   sessionOptions, 
   sessionStoreOptions, 
@@ -12,7 +13,6 @@ export {
   generateToken,
   handleInitialTokens,
   handleLogoutTokens,
-  isAuthenticated,
   requireJwt,
   tokenStorage,
   verifyToken

@@ -25,15 +25,6 @@ const publicKey = crypto.createPublicKey({
   format: 'pem'
 })
 
-export const isAuthenticated = (signedCookies: { Authorization: string, session: string, accessToken: string, refreshToken: string }) => {
-  let isAuthenticated;
-  if (signedCookies) {
-  const { Authorization, session, accessToken, refreshToken } = signedCookies
-    isAuthenticated = !!Authorization && !!session && !!accessToken && !!refreshToken 
-  }
-  return isAuthenticated
-}
-
 export const generateToken = ({ userId, expiresIn }: { userId: number, expiresIn?: string }) => {
   const payload =  { id: v4(), userId }
   const options: SignOptions = { 
@@ -110,12 +101,8 @@ export const requireJwt = async(req: any, res: any, next: any) => {
   }
 }
 
-export const handleInitialTokens = async(userId: number, req: any, res: any): Promise<Partial<IUserToken> | undefined | void> => {
-  try {
-    if (!req.signedCookies.refreshToken) {
-      return UnauthorizedRequestError("refresh token cookie", res);
-    }
-    
+export const handleInitialTokens = async(userId: number, res: any): Promise<Partial<IUserToken> | undefined | void> => {
+  try {    
     const existingTokens = await UserToken.readByUserId(userId)
     const newTokens = {
       access_token: generateToken({ userId, expiresIn: '1h' }),

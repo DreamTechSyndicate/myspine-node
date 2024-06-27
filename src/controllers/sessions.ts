@@ -17,7 +17,6 @@ import {
   handleInitialTokens,
   handleLogoutTokens,
   handleSessionData,
-  isAuthenticated,
   tokenStorage,
   MailTypes,
   verifyToken
@@ -34,6 +33,14 @@ import { Session } from '../models/Session'
 const clientURL = process.env.CLIENT_URL
 
 export const sessions: Controller = {
+  authenticate: async(_req, res) => {
+    try {
+      res.status(201).send({ authenticated: true })
+    } catch {
+      UnauthorizedRequestError("request session", res)
+    }
+  },
+
   getSessionBySessionId: async(req, res) => {
     try {
       const { sessionId } = req.params
@@ -75,7 +82,7 @@ export const sessions: Controller = {
       }
 
       const userId = user!.id
-      const tokens: Partial<IUserToken> | undefined | void = await handleInitialTokens(userId, req, res)
+      const tokens: Partial<IUserToken> | undefined | void = await handleInitialTokens(userId, res)
       const sessions: SessionData | undefined = await handleSessionData(userId, req, res)
       
       if (tokens?.access_token && tokens?.refresh_token && sessions) {
@@ -90,7 +97,7 @@ export const sessions: Controller = {
       
         res.status(201).json({
           message: "Successfully logged in",
-          data: { ...user, authenticated: isAuthenticated(req.signedCookies) }
+          data: user
         })
       }
     } catch (err: unknown) {

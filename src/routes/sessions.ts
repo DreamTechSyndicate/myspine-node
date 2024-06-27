@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { sessions } from '../controllers'
+import { isAuthenticated } from '../middleware'
 
 const router = Router()
 
@@ -11,5 +12,6 @@ router.post('/password/reset', sessions.resetPassword)
 
 router.get('/password/reset', sessions.renderPasswordReset)
 router.get('/session/:sessionId', sessions.getSessionBySessionId)
+router.get('/authenticate', isAuthenticated, sessions.authenticate)
 
 export { router as sessionsRouter }
