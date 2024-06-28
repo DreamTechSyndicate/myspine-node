@@ -28,31 +28,17 @@ import {
 } from '../middleware'
 import { containsMissingFields, verifyCSPRNG } from '../utils/funcs/validation'
 import { sanitizeEmail } from '../utils/funcs/strings'
-import { Session } from '../models/Session'
 
 const clientURL = process.env.CLIENT_URL
 
 export const sessions: Controller = {
-  authenticate: async(_req, res) => {
+  authenticate: async(req, res) => {
     try {
-      res.status(201).send({ authenticated: true })
-    } catch {
-      UnauthorizedRequestError("request session", res)
-    }
-  },
-
-  getSessionBySessionId: async(req, res) => {
-    try {
-      const { sessionId } = req.params
-
-      if (sessionId) {
-        throw new Error('Missing session Id')
+      if (req.session?.user_id) {
+        res.status(200).send({ authenticated: true })
       }
-
-      const session = await Session.readBySessionId(sessionId)
-      res.status(201).json(session)
-    } catch (err) {
-      InternalServerError("read", "session data", res, err)
+    } catch {
+      UnauthorizedRequestError("session", res)
     }
   },
 
@@ -107,19 +93,8 @@ export const sessions: Controller = {
 
   logout: async(req, res) => {
     try {
-      const userId = parseInt(req.params?.userId) 
-      
-      await handleLogoutTokens(userId, res)
-      
-      req.session.destroy()
-      req.session.save((err: unknown | Error) => {
-        if (err) {
-          console.warn('Error setting session data and/or cookie', err)
-          InternalServerError("update", "session", res)
-        }
-      })
-      res.send("Successfully logged out")
-      res.redirect('/login')
+      const userId = parseInt(req.params.userId) 
+      await handleLogoutTokens(userId, req, res)
     } catch (err: Error | unknown) {
       InternalServerError("logout", "user", res, err)
     }
@@ -286,8 +261,6 @@ export const sessions: Controller = {
       const payload = { password: hashedPass }
       const user = await User.update({ userId, payload })
 
-      const patient = user && await Patient.readByUserId(userId)
-
       if (!user) {
         InternalServerError("update", "password", res)
       }
@@ -298,6 +271,8 @@ export const sessions: Controller = {
         reset_password_token_expires_at: undefined
       })
 
+      // TODO: put back once finalized
+      // const patient = user && await Patient.readByUserId(userId)
       // sendEmail({
       //   mailType: MailTypes.RESET_PASS_COMPLETED,
       //   to: { 

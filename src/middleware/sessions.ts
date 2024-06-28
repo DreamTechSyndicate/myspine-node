@@ -5,6 +5,7 @@ import BetterSQLite3 from 'better-sqlite3'
 import BetterSQLite3SessionStore from 'better-sqlite3-session-store'
 import { SessionData } from '../utils/types/express-session'
 import { InternalServerError } from '../utils/funcs/errors'
+import { generateCSPRNG } from './tokens'
 
 type SessionStoreOptions = {
   client: any,
@@ -29,16 +30,7 @@ type SessionOptions = {
 const SQLiteStore = BetterSQLite3SessionStore(session)
 const sessionsDb = new BetterSQLite3(knexConfig.connection.filename)
 const sessionSecret =  process.env.SESSION_SECRET || crypto.randomBytes(64).toString('hex')
-const sessionId = crypto.randomBytes(16).toString('hex')
-
-export const isAuthenticated = (req:any, _res:any, next:any) => {
-  if (req.session?.user_id) {
-    next()
-  } else {
-    const err = new Error("Unauthorized: User is not logged in")
-    next(err)
-  }
-}
+const sessionId = generateCSPRNG()
 
 export const sessionStoreOptions: SessionStoreOptions = {
   client: sessionsDb,
@@ -70,8 +62,7 @@ export const handleSessionData = async(userId: number, req: any, res: any) => {
     console.warn('Undefined request session')
     InternalServerError("read", "session", res)
   }
-
-  sessionData.logged_in = true;
+  
   sessionData.user_id = userId;
 
   sessionData.save((err) => {

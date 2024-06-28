@@ -35,11 +35,18 @@ export const generateToken = ({ userId, expiresIn }: { userId: number, expiresIn
   return jwt.sign(payload, privateKey, options)
 }
 
+export const generateCSPRNG = () => {
+  const array = new Uint32Array(4)
+  crypto.getRandomValues(array)
+
+  return Array.from(array).map(x => x.toString(16).padStart(8, '0')).join('');
+} 
+
 export const generateResetPasswordToken = () => {
   const array = new Uint32Array(4);
   crypto.getRandomValues(array);
 
-  const token = Array.from(array).map(x => x.toString(16).padStart(8, '0')).join('');
+  const token = generateCSPRNG()
   const expiresAt = new Date(Date.now() + 3600000).toISOString() // expires in 1 hour
 
   return {
@@ -80,6 +87,7 @@ export const verifyToken = async (token: string): Promise<JwtPayload | string> =
 }
 
 export const requireJwt = async(req: any, res: any, next: any) => {
+  console.log('path:',  req.path)
   try {
     if (req.path === '/login' || req.path === '/patients/create') {
       next()
@@ -180,7 +188,7 @@ export const tokenStorage = {
   }
 }
 
-export const handleLogoutTokens = async(userId: number, res: any) => {
+export const handleLogoutTokens = async(userId: number, req: any, res: any) => {
   try {
     const userToken = await UserToken.readByUserId(userId)
 
@@ -188,6 +196,15 @@ export const handleLogoutTokens = async(userId: number, res: any) => {
       UnauthorizedRequestError("refresh token", res)
     } else {
       await UserToken.delete(userId)
+
+      req.session.destroy()
+      req.session.save((err: unknown | Error) => {
+        if (err) {
+          console.warn('Error setting session data and/or cookie', err)
+          InternalServerError("delete", "session", res)
+        }
+      })
+
       res.status(204).end()
     }
   } catch (err) {
