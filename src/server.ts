@@ -61,8 +61,8 @@ const teardown = async() => {
       for (const table of tables) {
         await db(table).truncate()
       }
+      await db.destroy()
     }
-    await db.destroy()
     console.log('Database connection closed')
   } catch (err) {
     console.error('Error tearing down database connection:', err)

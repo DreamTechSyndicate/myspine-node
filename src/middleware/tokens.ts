@@ -55,20 +55,21 @@ export const generateResetPasswordToken = () => {
   }
 }
 
-const generateNewAccessToken = async(userId: number, existingTokens: any) => {
-  const newAccessToken = generateToken({ userId, expiresIn: '1h' })
+const generateNewAccessToken = async(user_id: number, existingTokens: Partial<IUserToken>, res: any) => {
+  const newAccessToken = generateToken({ userId: user_id, expiresIn: '1h' })
   const newAccessTokenExpiresAt = new Date(Date.now() + accessTokenCookieOptions.maxAge).toISOString()
 
-  await UserToken.update({
-    user_id: userId,
+  const updated = await UserToken.update({
+    user_id,
     payload: {
       access_token: newAccessToken,
       access_token_expires_at: newAccessTokenExpiresAt
     }
   })
-
-  return {
-    access_token: newAccessToken,
+  
+  return !updated ? 
+    InternalServerError("update", "access token", res) : {
+    access_token: updated.access_token,
     refresh_token: existingTokens.refresh_token
   }
 }
@@ -87,7 +88,6 @@ export const verifyToken = async (token: string): Promise<JwtPayload | string> =
 }
 
 export const requireJwt = async(req: any, res: any, next: any) => {
-  console.log('path:',  req.path)
   try {
     if (req.path === '/login' || req.path === '/patients/create') {
       next()
@@ -109,26 +109,27 @@ export const requireJwt = async(req: any, res: any, next: any) => {
   }
 }
 
-export const handleInitialTokens = async(userId: number, res: any): Promise<Partial<IUserToken> | undefined | void> => {
+export const handleLoginTokens = async(user_id: number, res: any): Promise<Partial<IUserToken> | undefined | void> => {
   try {    
-    const existingTokens = await UserToken.readByUserId(userId)
-    const newTokens = {
-      access_token: generateToken({ userId, expiresIn: '1h' }),
-      refresh_token: generateToken({ userId, expiresIn: '1d' }),
+    const existingTokens = await UserToken.readByUserId(user_id)
+    const generatedTokens = {
+      access_token: generateToken({ userId: user_id }),
+      refresh_token: generateToken({ userId: user_id, expiresIn: '1d' }),
       access_token_expires_at: new Date(Date.now() + accessTokenCookieOptions.maxAge).toISOString(),
       refresh_token_expires_at: new Date(Date.now() + refreshTokenCookieOptions.maxAge).toISOString()
     }
 
     if (!existingTokens) {
-      await UserToken.create({
-        user_id: userId,
-        ...newTokens
+      const created = await UserToken.create({
+        user_id,
+        ...generatedTokens
       })
-
-      return {
-        access_token: newTokens.access_token,
-        refresh_token: newTokens.refresh_token
-      }
+      
+      return !created ? 
+        InternalServerError("create", "login tokens", res) : {
+          access_token: created.access_token,
+          refresh_token: created.refresh_token
+        }
     }
     
     if (existingTokens) {
@@ -139,24 +140,25 @@ export const handleInitialTokens = async(userId: number, res: any): Promise<Part
       } = existingTokens
 
       if (!refresh_token) {
-        await UserToken.update({
-          user_id: userId,
-          payload: newTokens
+        const updated = await UserToken.update({
+          user_id,
+          payload: generatedTokens
         })
-  
-        return {
-          access_token: newTokens.access_token,
-          refresh_token: newTokens.refresh_token
+        
+        return !updated ? 
+        InternalServerError("update", "login token", res) : {
+          access_token: updated.access_token,
+          refresh_token: updated.refresh_token
         }
       }
   
       const isAccessTokenExpired = new Date(access_token_expires_at) < new Date(Date.now())
       const isRefreshTokenExpired = new Date(refresh_token_expires_at) < new Date(Date.now())
   
-      if (isAccessTokenExpired) {
+      if (isAccessTokenExpired) { 
         return isRefreshTokenExpired
           ? UnauthorizedRequestError("refresh token", res)
-          : await generateNewAccessToken(userId, existingTokens)
+          : await generateNewAccessToken(user_id, existingTokens, res)
       } else {
         return {
           access_token: existingTokens.access_token,
@@ -188,26 +190,32 @@ export const tokenStorage = {
   }
 }
 
-export const handleLogoutTokens = async(userId: number, req: any, res: any) => {
+export const handleLogoutTokens = async (user_id: number, _req: any, res: any) => {
   try {
-    const userToken = await UserToken.readByUserId(userId)
-
+    const userToken = await UserToken.readByUserId(user_id)
+    
     if (!userToken) {
       UnauthorizedRequestError("refresh token", res)
     } else {
-      await UserToken.delete(userId)
+      const config = { 
+        path: '/', 
+        domain: process.env.DOMAIN, 
+        sameSite: false 
+      }
 
-      req.session.destroy()
-      req.session.save((err: unknown | Error) => {
-        if (err) {
-          console.warn('Error setting session data and/or cookie', err)
-          InternalServerError("delete", "session", res)
-        }
+      res.clearCookie('connect.sid', config);
+      res.clearCookie('refresh_token', config);
+      res.clearCookie('access_token', config);
+
+      await UserToken.update({ 
+        user_id, 
+        payload: {
+          refresh_token: '',
+          access_token: ''
+        } 
       })
-
-      res.status(204).end()
     }
   } catch (err) {
-    InternalServerError("logout", "user", res, err)
+    InternalServerError("delete", "user token", res, err)
   }
 }

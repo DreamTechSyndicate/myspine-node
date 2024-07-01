@@ -26,7 +26,7 @@ describe("sessions controller", () => {
     })
   }
 
-  describe.only("login", () => {    
+  describe("login", () => {    
     const loginRoute = '/login'
 
     beforeEach(async() => {
@@ -34,7 +34,7 @@ describe("sessions controller", () => {
       await terminateServer()
     })
 
-    it.only("should login and return tokens", async() => {
+    it("should login and return tokens", async() => {
       await User.create({
         email: 'wwhite@msn.com',
         password: 'ricin'

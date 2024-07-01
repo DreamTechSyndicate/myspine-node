@@ -14,12 +14,12 @@ import {
   UserToken,
 } from '../models'
 import { 
-  handleInitialTokens,
-  handleLogoutTokens,
+  handleLoginTokens,
   handleSessionData,
   tokenStorage,
   MailTypes,
-  verifyToken
+  verifyToken,
+  handleLogoutTokens
 } from '../middleware'
 import { SessionData } from 'src/utils/types/express-session'
 import { 
@@ -34,8 +34,13 @@ const clientURL = process.env.CLIENT_URL
 export const sessions: Controller = {
   authenticate: async(req, res) => {
     try {
-      if (req.session?.user_id) {
-        res.status(200).send({ authenticated: true })
+      if (req.session?.userId && req.session?.email) {
+        const { userId, email } = req.session
+        res.status(200).send({
+          userId,
+          email,
+          authenticated: true
+        })
       }
     } catch {
       UnauthorizedRequestError("session", res)
@@ -58,18 +63,18 @@ export const sessions: Controller = {
       const user = await User.readByEmail(sanitizeEmail(email))
       
       if (!user) {
-        NotFoundError("user", res)
+        return NotFoundError("user", res)
       }
       
       const isMatched = await argon2.verify(user!.password, password)
 
       if (!isMatched) {
-        UnauthorizedRequestError("password", res)
+        return UnauthorizedRequestError("password", res)
       }
 
-      const userId = user!.id
-      const tokens: Partial<IUserToken> | undefined | void = await handleInitialTokens(userId, res)
-      const sessions: SessionData | undefined = await handleSessionData(userId, req, res)
+      const user_id = user!.id
+      const tokens: Partial<IUserToken> | undefined | void = await handleLoginTokens(user_id, res)
+      const sessions: SessionData | undefined = await handleSessionData(user, req, res)
       
       if (tokens?.access_token && tokens?.refresh_token && sessions) {
         const decoded = await verifyToken(tokens.access_token)
@@ -93,8 +98,10 @@ export const sessions: Controller = {
 
   logout: async(req, res) => {
     try {
-      const userId = parseInt(req.params.userId) 
-      await handleLogoutTokens(userId, req, res)
+      const user_id = parseInt(req.params?.userId)
+      await handleLogoutTokens(user_id, req, res)
+      await req.session.destroy()
+      res.status(204).end()
     } catch (err: Error | unknown) {
       InternalServerError("logout", "user", res, err)
     }

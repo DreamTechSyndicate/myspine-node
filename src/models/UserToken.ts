@@ -78,10 +78,10 @@ export class UserToken {
     await db(USER_TOKENS_TABLE)
       .where('user_id', '=', user_id)
       .update<Partial<IUserToken>>({
-        access_token: undefined,
-        refresh_token: undefined,
-        reset_password_token: reset_password_token || null,
-        reset_password_token_expires_at: reset_password_token_expires_at || null
+        access_token: '',
+        refresh_token: '',
+        reset_password_token: reset_password_token || '',
+        reset_password_token_expires_at: reset_password_token_expires_at || ''
       })
 
     const updatedUserToken = await UserToken.readByUserId(user_id)

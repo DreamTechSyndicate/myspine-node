@@ -6,6 +6,7 @@ import BetterSQLite3SessionStore from 'better-sqlite3-session-store'
 import { SessionData } from '../utils/types/express-session'
 import { InternalServerError } from '../utils/funcs/errors'
 import { generateCSPRNG } from './tokens'
+import { IUser } from '../models'
 
 type SessionStoreOptions = {
   client: any,
@@ -55,7 +56,7 @@ export const sessionOptions: SessionOptions = {
   store: new SQLiteStore(sessionStoreOptions)
 }
 
-export const handleSessionData = async(userId: number, req: any, res: any) => {
+export const handleSessionData = async(user: IUser, req: any, res: any) => {
   const sessionData = req.session as SessionData
 
   if (!sessionData) {
@@ -63,7 +64,8 @@ export const handleSessionData = async(userId: number, req: any, res: any) => {
     InternalServerError("read", "session", res)
   }
   
-  sessionData.user_id = userId;
+  sessionData.userId = user.id
+  sessionData.email = user.email
 
   sessionData.save((err) => {
     if (err) {
