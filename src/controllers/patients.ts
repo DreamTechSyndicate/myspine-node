@@ -1,22 +1,32 @@
 import { 
   BadRequestError,
+  ExternalServerError,
   InternalServerError,
   NotFoundError,
 } from '../utils/funcs/errors'
 import { Controller } from '../utils/types/generic'
-import { Patient, User, IPatient } from '../models'
+import { Patient, IPatient, User, IUser } from '../models'
 import { containsMissingFields } from '../utils/funcs/validation'
 import { 
   capitalizeFirstLetter, 
   sanitizeEmail 
 } from '../utils/funcs/strings'
-import { MailTypes, sendEmail } from '../middleware'
+// import { MailTypes, sendEmail } from '../middleware'
+import argon2 from 'argon2'
 
 export const patients: Controller = {
-  getPatientById: async (req, res) => {
+  getPatientByUserId: async (req, res) => {
     try {
-      const patientId: number = parseInt(req.params.id)
-      const patient = await Patient.readById(patientId)
+      console.log(req.query)
+      
+      const userId: number = parseInt(req.query?.userId)
+      console.log('userId:', userId)
+
+      if (!userId) {
+        BadRequestError("user id", res)
+      }
+
+      const patient = await Patient.readByUserId(userId)
 
       if (!patient) {
         NotFoundError("patient", res)
@@ -31,14 +41,14 @@ export const patients: Controller = {
   postPatient: async (req, res) => {
     try {
       let {
-        user_id,
         firstname,
         lastname,
         pain_description,
         pain_degree,
         address,
         email,
-        phone_number
+        phone_number,
+        password
       } = req.body
 
       const missingFields = containsMissingFields({
@@ -62,41 +72,58 @@ export const patients: Controller = {
         phone_number
       }
 
-      let user;
       let patient;
 
-      user_id
-        ? user = await User.readById(user_id)
-        : patient = await Patient.create(payload)
+      const existingPatient = await Patient.readByEmail(payload.email)
 
-
-      if (user) {
-        patient = await Patient.create({ ...payload, user_id })
+      if (existingPatient) {
+        const userByEmail: IUser | undefined = await User.readByEmail(payload.email)
+        !userByEmail && NotFoundError("user email", res)
         
-        await User.update({ 
-          userId: user_id, 
-          payload: { email: sanitizedEmail }
+        // Update an existing patient with a user_id if not already
+        patient = await Patient.update({ 
+          patientId: existingPatient.id, 
+          payload: { ...payload, user_id: userByEmail!.id } 
         })
+      
+        res.redirect('/login')
       }
 
-      if (patient) {
-        sendEmail({
-          mailType: MailTypes.APPT_REQUESTED,
-          from: {
-            email: patient.email,
-            name: `${patient.firstname} ${patient.lastname}`,
-            id: patient.id
-          },
-          html: `<p>Greetings, doc!<br/><br/>
-          A patient has requested an appointment with you.<br/><br/>
-          <b>Name: </b>${patient.firstname} ${patient.lastname}<br/>
-          <b>Pain description: </b>${patient.pain_description}<br/>
-          <b>Pain degree: </b>${patient.pain_degree}<br/>
-          <b>Address: </b>${patient.address || 'N/A'}<br/>
-          <b>Email: </b>${patient.email}<br/>
-          <b>Phone number: </b>${patient.phone_number}<br/></p>` 
-        })
+      if (!existingPatient) {
+        if (!password) {
+          // New patient might not have an associated user_id yet
+          patient = await Patient.create(payload)
+        } else {
+          // Patient can opt for a single-click registration
+          // Given a password, patient will also create an account user with user_id
+          const hashedPass: string | undefined = await argon2.hash(password)
+          !hashedPass && ExternalServerError("argon 2 hashing", res);
+
+          const user = await User.create({ email: sanitizedEmail, password: hashedPass })
+          !user && new Error("Unable to create patient as a user")
+
+          patient = await Patient.create({ ...payload, user_id: user!.id }) 
+        }
       }
+
+      patient && console.log('patient created:', patient)
+      // TODO: PUT BACK
+      // patients && sendEmail({
+      //   mailType: MailTypes.APPT_REQUESTED,
+      //   from: {
+      //     email: patient.email,
+      //     name: `${patient.firstname} ${patient.lastname}`,
+      //     id: patient.id
+      //   },
+      //   html: `<p>Greetings, doc!<br/><br/>
+      //   A patient has requested an appointment with you.<br/><br/>
+      //   <b>Name: </b>${patient.firstname} ${patient.lastname}<br/>
+      //   <b>Pain description: </b>${patient.pain_description}<br/>
+      //   <b>Pain degree: </b>${patient.pain_degree}<br/>
+      //   <b>Address: </b>${patient.address || 'N/A'}<br/>
+      //   <b>Email: </b>${patient.email}<br/>
+      //   <b>Phone number: </b>${patient.phone_number}<br/></p>` 
+      // })
 
       res.status(201).json(patient)
     } catch (err: Error | unknown) {

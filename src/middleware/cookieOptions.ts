@@ -1,10 +1,10 @@
+const isSecure = process.env.NODE_ENV === 'development' ? false : true
+
 export const cookieOptions = {
   httpOnly: true, // Accessible via server and not client side script, may tamper with certain procedure like SSO, that is client-side access reliant
-  secure: true,
-  signed: true,
   secret: process.env.SESSION_SECRET!,
-  // domain: 'localhost',
-  // path: '/'
+  secure: isSecure,
+  signed: true,
 }
 
 export const sessionCookieOptions = {

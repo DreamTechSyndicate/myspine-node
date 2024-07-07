@@ -190,24 +190,29 @@ export const tokenStorage = {
   }
 }
 
-export const handleLogoutTokens = async (user_id: number, _req: any, res: any) => {
+export const handleLogoutTokens = async (user_id: number, req: any, res: any) => {
   try {
     const userToken = await UserToken.readByUserId(user_id)
-    
+
     if (!userToken) {
       UnauthorizedRequestError("refresh token", res)
     } else {
+      const isSecure = process.env.NODE_ENV === 'development' ? false : true
       const config = { 
         path: '/', 
-        domain: process.env.DOMAIN, 
-        sameSite: false 
+        httpOnly: true,
+        secure: isSecure,
+        signed: true,
+        sameSite: false  
       }
 
       res.clearCookie('connect.sid', config);
       res.clearCookie('refresh_token', config);
       res.clearCookie('access_token', config);
 
-      await UserToken.update({ 
+      req?.session?.destroy()
+
+      userToken && await UserToken.update({
         user_id, 
         payload: {
           refresh_token: '',

@@ -9,7 +9,7 @@ import {
 import { Controller } from '../utils/types/generic'
 import { 
   IUserToken, 
-  Patient, 
+  // Patient, 
   User, 
   UserToken,
 } from '../models'
@@ -17,14 +17,14 @@ import {
   handleLoginTokens,
   handleSessionData,
   tokenStorage,
-  MailTypes,
+  // MailTypes,
   verifyToken,
   handleLogoutTokens
 } from '../middleware'
 import { SessionData } from 'src/utils/types/express-session'
 import { 
   generateResetPasswordToken,
-  sendEmail
+  // sendEmail
 } from '../middleware'
 import { containsMissingFields, verifyCSPRNG } from '../utils/funcs/validation'
 import { sanitizeEmail } from '../utils/funcs/strings'
@@ -98,9 +98,14 @@ export const sessions: Controller = {
 
   logout: async(req, res) => {
     try {
-      const user_id = parseInt(req.params?.userId)
-      await handleLogoutTokens(user_id, req, res)
-      await req.session.destroy()
+      const userId = parseInt(req.params?.userId)
+
+      if (!userId) {
+        BadRequestError("user id", res)
+      }
+
+      await handleLogoutTokens(userId, req, res)
+      
       res.status(204).end()
     } catch (err: Error | unknown) {
       InternalServerError("logout", "user", res, err)
@@ -153,7 +158,7 @@ export const sessions: Controller = {
       }
 
       const resetURL = `${clientURL}/password/reset?token=${reset_password_token}&userId=${user_id}`
-      console.log(resetURL)
+      console.log('Reset URL:', resetURL)
 
       // TODO: put back once finalized
       // const patientName = patient ? `${patient?.firstname} ${patient?.lastname}` : 'Patient'

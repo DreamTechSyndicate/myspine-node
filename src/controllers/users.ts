@@ -6,7 +6,7 @@ import {
   NotFoundError
 } from '../utils/funcs/errors'
 import { Controller } from '../utils/types/generic'
-import { User, IUser, Patient } from '../models'
+import { User, IUser } from '../models'
 import { containsMissingFields } from '../utils/funcs/validation'
 import { sanitizeEmail } from '../utils/funcs/strings'
 
@@ -60,13 +60,8 @@ export const users: Controller = {
         const existingUser = email && await User.readByEmail(sanitizedEmail)
 
         if (existingUser) {
-          const patient = await Patient.readByEmail(sanitizedEmail)
-
-          patient && await Patient.update({ 
-            patientId: patient.id, 
-            payload: { user_id: existingUser.id, email: sanitizedEmail }
-          })
-
+          // User cannot be created without being registered as a patient first
+          // But user might try to login with an existing patient email
           res.status(302).json(existingUser)
           return;
         } else {
