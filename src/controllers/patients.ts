@@ -16,11 +16,8 @@ import argon2 from 'argon2'
 
 export const patients: Controller = {
   getPatientByUserId: async (req, res) => {
-    try {
-      console.log(req.query)
-      
+    try {      
       const userId: number = parseInt(req.query?.userId)
-      console.log('userId:', userId)
 
       if (!userId) {
         BadRequestError("user id", res)
