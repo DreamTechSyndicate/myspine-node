@@ -11,8 +11,34 @@ import {
   capitalizeFirstLetter, 
   sanitizeEmail 
 } from '../utils/funcs/strings'
-// import { MailTypes, sendEmail } from '../middleware'
+import { MailTypes, sendEmail } from '../middleware'
 import argon2 from 'argon2'
+
+const sendConsultationEmail = (patient: IPatient) => {
+  try {
+    // patient && sendEmail({
+    //   mailType: MailTypes.APPT_REQUESTED,
+    //   from: {
+    //     email: patient.email,
+    //     name: `${patient.firstname} ${patient.lastname}`,
+    //     id: patient.id
+    //   },
+    //   html: `<p>Greetings, doc!<br/><br/>
+    //   A patient has requested an appointment with you.<br/><br/>
+    //   <b>Name: </b>${patient.firstname} ${patient.lastname}<br/>
+    //   <b>Pain description: </b>${patient.pain_description}<br/>
+    //   <b>Pain degree: </b>${patient.pain_degree}<br/>
+    //   <b>Address: </b>${patient.address || 'N/A'}<br/>
+    //   <b>Email: </b>${patient.email}<br/>
+    //   <b>Phone number: </b>${patient.phone_number}<br/></p>` 
+    // })
+    console.log('requesting:', patient)
+    
+  } catch (err) {
+    throw new Error("Unable to establish Nodemailer SMTP mail service")
+  }
+
+}
 
 export const patients: Controller = {
   getPatientByUserId: async (req, res) => {
@@ -105,22 +131,7 @@ export const patients: Controller = {
 
       patient && console.log('patient created:', patient)
       // TODO: PUT BACK
-      // patients && sendEmail({
-      //   mailType: MailTypes.APPT_REQUESTED,
-      //   from: {
-      //     email: patient.email,
-      //     name: `${patient.firstname} ${patient.lastname}`,
-      //     id: patient.id
-      //   },
-      //   html: `<p>Greetings, doc!<br/><br/>
-      //   A patient has requested an appointment with you.<br/><br/>
-      //   <b>Name: </b>${patient.firstname} ${patient.lastname}<br/>
-      //   <b>Pain description: </b>${patient.pain_description}<br/>
-      //   <b>Pain degree: </b>${patient.pain_degree}<br/>
-      //   <b>Address: </b>${patient.address || 'N/A'}<br/>
-      //   <b>Email: </b>${patient.email}<br/>
-      //   <b>Phone number: </b>${patient.phone_number}<br/></p>` 
-      // })
+      // patient && sendConsultationEmail(patient, res)
 
       res.status(201).json(patient)
     } catch (err: Error | unknown) {
@@ -128,11 +139,32 @@ export const patients: Controller = {
     }
   },
 
+  requestConsultation: async (req, res) => {
+    try {
+      const patientId = parseInt(req.params?.id)
+      const patient = await Patient.readById(patientId)
+
+      if (!patient) {
+        BadRequestError("patient", res)
+      }
+
+      sendConsultationEmail(patient)
+      res.status(201).json(patient)
+    } catch (err) {
+      InternalServerError("create", "consultation request", res, err)
+    }
+  },
+
   putPatient: async (req, res) => {
     try {
-      const patientId = parseInt(req.params.id)
+      const patientId = parseInt(req.params?.id)
+      const patient = await Patient.readById(patientId)
+
+      if (!patient) {
+        BadRequestError("patient", res)
+      }
+
       let {
-        user_id,
         firstname,
         lastname,
         pain_description,
@@ -142,17 +174,22 @@ export const patients: Controller = {
         phone_number
       } = req.body
 
-      const patient = await Patient.readById(patientId)
-      
-      if (!patient) {
-        throw new Error('User does not exist')
-      }
+      const missingFields = containsMissingFields({ 
+        payload: { 
+          firstname,
+          lastname, 
+          pain_description, 
+          pain_degree, 
+          address, 
+          email, 
+          phone_number 
+        }, 
+        requiredFields: ['firstname', 'lastname', 'pain_description', 'pain_degree', 'email', 'phone_number'],
+      })
+
+      missingFields && BadRequestError(missingFields, res)
 
       let payload: Partial<IPatient> = {}
-
-      if (user_id) {
-        payload.user_id = user_id
-      }
 
       if (firstname) {
         payload.firstname = firstname
@@ -179,15 +216,15 @@ export const patients: Controller = {
       }
 
       if (phone_number) {
-        const missingFields = containsMissingFields({ 
-          payload: req.body, 
-          requiredFields: ['firstname', 'lastname', 'pain_description', 'pain_degree', 'email', 'phone_number'],
-        })
-
-        missingFields && BadRequestError(missingFields, res)
+        payload.phone_number = phone_number
       }
 
       const updatedPatient = await Patient.update({ patientId, payload })
+      updatedPatient && console.log('updatedPatient:', updatedPatient)
+
+      // TODO: PUT BACK
+      // updatdPatient && sendConsultationEmail(updatedPatient, res)
+
       res.status(201).json(updatedPatient)
     } catch (err: Error | unknown) {
       InternalServerError("update", "patient", res, err)
@@ -196,7 +233,7 @@ export const patients: Controller = {
 
   deletePatient: async (req, res) => {
     try {
-      const patientId: number = parseInt(req.params.id)
+      const patientId: number = parseInt(req.query?.id)
       const patientDeleted: number = await Patient.delete(patientId)
 
       if (patientDeleted) {
