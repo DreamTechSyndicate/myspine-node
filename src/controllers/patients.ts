@@ -16,28 +16,25 @@ import argon2 from 'argon2'
 
 const sendConsultationEmail = (patient: IPatient) => {
   try {
-    // patient && sendEmail({
-    //   mailType: MailTypes.APPT_REQUESTED,
-    //   from: {
-    //     email: patient.email,
-    //     name: `${patient.firstname} ${patient.lastname}`,
-    //     id: patient.id
-    //   },
-    //   html: `<p>Greetings, doc!<br/><br/>
-    //   A patient has requested an appointment with you.<br/><br/>
-    //   <b>Name: </b>${patient.firstname} ${patient.lastname}<br/>
-    //   <b>Pain description: </b>${patient.pain_description}<br/>
-    //   <b>Pain degree: </b>${patient.pain_degree}<br/>
-    //   <b>Address: </b>${patient.address || 'N/A'}<br/>
-    //   <b>Email: </b>${patient.email}<br/>
-    //   <b>Phone number: </b>${patient.phone_number}<br/></p>` 
-    // })
-    console.log('requesting:', patient)
-    
+    patient && sendEmail({
+      mailType: MailTypes.APPT_REQUESTED,
+      from: {
+        email: patient.email,
+        name: `${patient.firstname} ${patient.lastname}`,
+        id: patient.id
+      },
+      html: `<p>Greetings, doc!<br/><br/>
+      A patient has requested an appointment with you.<br/><br/>
+      <b>Name: </b>${patient.firstname} ${patient.lastname}<br/>
+      <b>Pain description: </b>${patient.pain_description}<br/>
+      <b>Pain degree: </b>${patient.pain_degree}<br/>
+      <b>Address: </b>${patient.address || 'N/A'}<br/>
+      <b>Email: </b>${patient.email}<br/>
+      <b>Phone number: </b>${patient.phone_number}<br/></p>` 
+    })
   } catch (err) {
     throw new Error("Unable to establish Nodemailer SMTP mail service")
   }
-
 }
 
 export const patients: Controller = {
@@ -99,23 +96,26 @@ export const patients: Controller = {
 
       const existingPatient = await Patient.readByEmail(payload.email)
 
-      if (existingPatient) {
-        const userByEmail: IUser | undefined = await User.readByEmail(payload.email)
-        !userByEmail && NotFoundError("user email", res)
-        
+      if (existingPatient) {        
+        const userByEmail = await User.readByEmail(existingPatient.email)
         // Update an existing patient with a user_id if not already
-        patient = await Patient.update({ 
-          patientId: existingPatient.id, 
-          payload: { ...payload, user_id: userByEmail!.id } 
-        })
-      
-        res.redirect('/login')
+
+        patient = userByEmail
+          ? await Patient.update({ 
+              patientId: existingPatient.id, 
+              payload: { ...payload, user_id: userByEmail!.id } 
+          })
+          : await Patient.update({
+              patientId: existingPatient.id,
+              payload
+          })
       }
 
       if (!existingPatient) {
         if (!password) {
           // New patient might not have an associated user_id yet
           patient = await Patient.create(payload)
+          patient && console.log('consultation requested for a non-accoount & non-existing patient:', patient)
         } else {
           // Patient can opt for a single-click registration
           // Given a password, patient will also create an account user with user_id
@@ -125,11 +125,11 @@ export const patients: Controller = {
           const user = await User.create({ email: sanitizedEmail, password: hashedPass })
           !user && new Error("Unable to create patient as a user")
 
-          patient = await Patient.create({ ...payload, user_id: user!.id }) 
+          patient = await Patient.create({ ...payload, user_id: user!.id })
+          patient && console.log('consultation requested for a new registered patient:', patient)
         }
       }
 
-      patient && console.log('patient created:', patient)
       // TODO: PUT BACK
       // patient && sendConsultationEmail(patient, res)
 
@@ -148,7 +148,9 @@ export const patients: Controller = {
         BadRequestError("patient", res)
       }
 
-      sendConsultationEmail(patient)
+      // sendConsultationEmail(patient)
+
+      console.log('requesting:', patient)
       res.status(201).json(patient)
     } catch (err) {
       InternalServerError("create", "consultation request", res, err)
