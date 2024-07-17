@@ -9,7 +9,7 @@ import {
 import { Controller } from '../utils/types/generic'
 import { 
   IUserToken, 
-  // Patient, 
+  // Customer, 
   User, 
   UserToken,
 } from '../models'
@@ -117,7 +117,7 @@ export const sessions: Controller = {
 
     try {
       const user = await User.readByEmail(sanitizeEmail(email))
-      // const patient = user && await Patient.readByUserId(user.id)
+      // const customer = user && await Customer.readByUserId(user.id)
 
       if (!user) {
         return BadRequestError("email", res)
@@ -161,15 +161,15 @@ export const sessions: Controller = {
       console.log('Reset URL:', resetURL)
 
       // TODO: put back once finalized
-      // const patientName = patient ? `${patient?.firstname} ${patient?.lastname}` : 'Patient'
+      // const customerName = customer ? `${customer?.firstname} ${customer?.lastname}` : 'Customer'
       // sendEmail({
       //   mailType: MailTypes.RESET_PASS_REQUESTED,
       //   to: { 
       //     email: user!.email,
-      //     name: patientName,
+      //     name: customerName,
       //     id: user!.id
       //   },
-      //   html: `<p>Dear ${patientName},<br/><br/>
+      //   html: `<p>Dear ${customerName},<br/><br/>
       //   You have requested a password reset for <a href="https://peaceofmindspine.com">peaceofmindspine.com</a> account. Please click on the following <a href=${resetURL} target="_self">Link</a> to reset your password. Please note, the link will be valid for 1 hour. </p>`
       // })
 
@@ -284,12 +284,12 @@ export const sessions: Controller = {
       })
 
       // TODO: put back once finalized
-      // const patient = user && await Patient.readByUserId(userId)
+      // const customer = user && await Customer.readByUserId(userId)
       // sendEmail({
       //   mailType: MailTypes.RESET_PASS_COMPLETED,
       //   to: { 
       //     email: user!.email, 
-      //     name: `${patient?.firstname} ${patient?.lastname}`,
+      //     name: `${customer?.firstname} ${customer?.lastname}`,
       //     id: user.id
       //   }
       // })

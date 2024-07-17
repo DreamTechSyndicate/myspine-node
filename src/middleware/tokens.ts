@@ -89,7 +89,7 @@ export const verifyToken = async (token: string): Promise<JwtPayload | string> =
 
 export const requireJwt = async(req: any, res: any, next: any) => {
   try {
-    if (req.path === '/login' || req.path === '/patients/create') {
+    if (req.path === '/login' || req.path === '/customers/create') {
       next()
     } else {
       const authorizationHeader = req.headers.authorization

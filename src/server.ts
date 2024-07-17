@@ -54,7 +54,7 @@ app.use("/", (
 export const server = http.createServer(app)
 
 const teardown = async() => {
-  const tables = ['users', 'user_tokens', 'patients']
+  const tables = ['users', 'user_tokens', 'customers']
   try {
     console.log('Starting teardown')
     if (env === dev_env) {

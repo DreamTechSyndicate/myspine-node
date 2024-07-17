@@ -60,8 +60,8 @@ export const users: Controller = {
         const existingUser = email && await User.readByEmail(sanitizedEmail)
 
         if (existingUser) {
-          // User cannot be created without being registered as a patient first
-          // But user might try to login with an existing patient email
+          // User cannot be created without being registered as a customer first
+          // But user might try to login with an existing customer email
           res.status(302).json(existingUser)
           return;
         } else {

@@ -1,11 +1,11 @@
 import { sessionsRouter } from './sessions'
 import { usersRouter } from './users'
-import { patientsRouter } from './patients'
+import { customersRouter } from './customers'
 
 const routes = [
   { path: '/', router: sessionsRouter },
   { path: '/users', router: usersRouter },
-  { path: '/patients', router: patientsRouter }
+  { path: '/customers', router: customersRouter }
 ]
 
 export default routes
