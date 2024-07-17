@@ -11,30 +11,9 @@ import {
   capitalizeFirstLetter, 
   sanitizeEmail 
 } from '../utils/funcs/strings'
-import { MailTypes, sendEmail } from '../middleware'
-import argon2 from 'argon2'
+// import { sendConsultationEmail } from '../utils/funcs/email'
 
-const sendConsultationEmail = (customer: ICustomer) => {
-  try {
-    customer && sendEmail({
-      mailType: MailTypes.APPT_REQUESTED,
-      from: {
-        email: customer.email,
-        name: `${customer.firstname} ${customer.lastname}`,
-        id: customer.id
-      },
-      html: `<p>Greetings POMS Doctor,<br/><br/>
-      Great News!! You have received a new customer request for a second opinion. All of the information you need to begin has been provided below to allow you to decide if they are an ideal candidate for your second opinion.<br/><br/>
-      <b>Name: </b>${customer.firstname} ${customer.lastname}<br/>
-      <b>Pain description: </b>${customer.pain_description}<br/>
-      <b>Pain degree: </b>${customer.pain_degree}<br/>
-      <b>Email: </b>${customer.email}<br/>
-      <b>Phone number: </b>${customer.phone_number}<br/></p>`
-    })
-  } catch (err) {
-    throw new Error("Unable to establish Nodemailer SMTP mail service")
-  }
-}
+import argon2 from 'argon2'
 
 export const customers: Controller = {
   getCustomerByUserId: async (req, res) => {
