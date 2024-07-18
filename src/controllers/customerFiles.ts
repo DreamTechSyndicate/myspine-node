@@ -24,7 +24,7 @@ export const customerFiles: Controller = {
       res.redirect(authUrl);
       // User should be redirected to Dropbox authorization page
     } catch (err: Error | unknown) {
-      InternalServerError("auth", "customer file", res, err);
+      InternalServerError("auth", "dropbox", res, err);
     }
   },
 
