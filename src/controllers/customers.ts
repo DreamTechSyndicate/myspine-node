@@ -212,7 +212,6 @@ export const customers: Controller = {
         if (!password) {
           // New customer might not have an associated user_id yet
           customer = await Customer.create(payload)
-          customer && console.log('consultation requested for a non-accoount & non-existing customer:', customer)
         } else {
           // Customer can opt for a single-click registration
           // Given a password, customer will also create an account user with user_id
@@ -223,7 +222,6 @@ export const customers: Controller = {
           !user && new Error("Unable to create customer as a user")
 
           customer = await Customer.create({ ...payload, user_id: user!.id })
-          customer && console.log('consultation requested for a new registered customer:', customer)
         }
       }
 

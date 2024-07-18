@@ -9,7 +9,7 @@ import {
 import { Controller } from '../utils/types/generic'
 import { 
   IUserToken, 
-  // Customer, 
+  Customer, 
   User, 
   UserToken,
 } from '../models'
@@ -17,17 +17,16 @@ import {
   handleLoginTokens,
   handleSessionData,
   tokenStorage,
-  // MailTypes,
   verifyToken,
   handleLogoutTokens
 } from '../middleware'
 import { SessionData } from 'src/utils/types/express-session'
 import { 
-  generateResetPasswordToken,
-  // sendEmail
+  generateResetPasswordToken
 } from '../middleware'
 import { containsMissingFields, verifyCSPRNG } from '../utils/funcs/validation'
 import { sanitizeEmail } from '../utils/funcs/strings'
+import { sendPasswordResetEmail } from '../utils/funcs/email'
 
 const clientURL = process.env.CLIENT_URL
 
@@ -117,9 +116,9 @@ export const sessions: Controller = {
 
     try {
       const user = await User.readByEmail(sanitizeEmail(email))
-      // const customer = user && await Customer.readByUserId(user.id)
+      const customer = user && await Customer.readByUserId(user.id)
 
-      if (!user) {
+      if (!customer) {
         return BadRequestError("email", res)
       }
 
@@ -158,20 +157,15 @@ export const sessions: Controller = {
       }
 
       const resetURL = `${clientURL}/password/reset?token=${reset_password_token}&userId=${user_id}`
-      console.log('Reset URL:', resetURL)
 
-      // TODO: put back once finalized
-      // const customerName = customer ? `${customer?.firstname} ${customer?.lastname}` : 'Customer'
-      // sendEmail({
-      //   mailType: MailTypes.RESET_PASS_REQUESTED,
-      //   to: { 
-      //     email: user!.email,
-      //     name: customerName,
-      //     id: user!.id
-      //   },
-      //   html: `<p>Dear ${customerName},<br/><br/>
-      //   You have requested a password reset for <a href="https://peaceofmindspine.com">peaceofmindspine.com</a> account. Please click on the following <a href=${resetURL} target="_self">Link</a> to reset your password. Please note, the link will be valid for 1 hour. </p>`
-      // })
+      const customerName = customer ? `${customer?.firstname} ${customer?.lastname}` : 'Customer'
+
+      sendPasswordResetEmail({
+        userId: user!.id,
+        name: customerName,
+        email: user!.email,
+        resetURL
+      })
 
       res.status(201).json({ 
         message: "Password reset successfully requested",

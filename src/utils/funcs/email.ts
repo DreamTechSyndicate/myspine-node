@@ -120,3 +120,21 @@ export const sendConsultationEmail = (customer: ICustomer) => {
     throw new Error("Unable to establish Nodemailer SMTP mail service")
   }
 }
+
+
+export const sendPasswordResetEmail = ({ userId, name, email, resetURL }: { userId: number, name: string, email: string, resetURL: string }) => {
+  try {
+    sendEmail({
+      mailType: MailTypes.RESET_PASS_REQUESTED,
+      to: { 
+        email,
+        name,
+        id: userId
+      },
+      html: `<p>Dear ${name},<br/><br/>
+      You have requested a password reset for <a href="https://peaceofmindspine.com">peaceofmindspine.com</a> account. Please click on the following <a href=${resetURL} target="_self">Link</a> to reset your password. Please note, the link will be valid for 1 hour. </p>`
+      })
+  } catch (err) {
+    throw new Error("Unable to establish Nodemailer SMTP mail service")
+  }
+}
