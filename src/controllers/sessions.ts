@@ -26,7 +26,7 @@ import {
 } from '../middleware'
 import { containsMissingFields, verifyCSPRNG } from '../utils/funcs/validation'
 import { sanitizeEmail } from '../utils/funcs/strings'
-import { sendPasswordResetEmail } from '../utils/funcs/email'
+import { sendPasswordResetCompletedEmail, sendPasswordResetEmail } from '../utils/funcs/email'
 
 const clientURL = process.env.CLIENT_URL
 
@@ -158,7 +158,7 @@ export const sessions: Controller = {
 
       const resetURL = `${clientURL}/password/reset?token=${reset_password_token}&userId=${user_id}`
 
-      const customerName = customer ? `${customer?.firstname} ${customer?.lastname}` : 'Customer'
+      const customerName = customer ? `${customer?.firstname} ${customer?.lastname}` : 'customer'
 
       sendPasswordResetEmail({
         userId: user!.id,
@@ -277,16 +277,14 @@ export const sessions: Controller = {
         reset_password_token_expires_at: undefined
       })
 
-      // TODO: put back once finalized
-      // const customer = user && await Customer.readByUserId(userId)
-      // sendEmail({
-      //   mailType: MailTypes.RESET_PASS_COMPLETED,
-      //   to: { 
-      //     email: user!.email, 
-      //     name: `${customer?.firstname} ${customer?.lastname}`,
-      //     id: user.id
-      //   }
-      // })
+      const customer = user && await Customer.readByUserId(userId)
+      const customerName = customer ? `${customer?.firstname} ${customer?.lastname}` : 'customer'
+
+      customer && sendPasswordResetCompletedEmail({
+        userId: user!.id,
+        name: customerName,
+        email: user!.email
+      })
 
       res.status(200).json({ message: "Password reset successfully" })
     } catch (err: Error | unknown) {
