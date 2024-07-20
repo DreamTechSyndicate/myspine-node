@@ -37,7 +37,7 @@ const port = process.env.PORT
 app.use(express.json())
 app.use(cookieParser(process.env.SESSION_SECRET!))
 app.use(cors(corsOptions))
-app.use( session(sessionOptions))
+app.use(session(sessionOptions))
 
 routes.forEach(({ path, router }) => {
   app.use(path, router)

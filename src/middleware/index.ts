@@ -20,3 +20,4 @@ export {
   sendEmail,
   MailTypes
 } from './mailerOptions'
+export { dropboxProxy } from './dropboxProxy'

@@ -89,7 +89,15 @@ export const verifyToken = async (token: string): Promise<JwtPayload | string> =
 
 export const requireJwt = async(req: any, res: any, next: any) => {
   try {
-    if (req.path === '/login' || req.path === '/customers/create') {
+    const exemptedPaths = [
+      '/login',
+      '/customers/create',
+      '/auth/dropbox',
+      '/auth/dropbox/callback',
+      '/customers/dropbox/upload'
+    ]
+
+    if (exemptedPaths.includes(req.path)) {
       next()
     } else {
       const authorizationHeader = req.headers.authorization

@@ -7,30 +7,40 @@ import { Controller } from '../utils/types/generic'
 import { Customer, CustomerFile } from '../models'
 import axios from 'axios'
 
+import { Dropbox } from 'dropbox'
+import { generateCSPRNG } from '../middleware/tokens'
+
 const BASE_URL = process.env.BASE_URL
 const DROPBOX_CLIENT_ID = process.env.DROPBOX_CLIENT_ID
 const DROPBOX_CLIENT_SECRET = process.env.DROPBOX_CLIENT_SECRET
+const DROPBOX_REDIRECT_URI = process.env.DROPBOX_REDIRECT_URI
+const DROPBOX_SCOPE = process.env.DROPBOX_SCOPE
+
+const dropbox = new Dropbox({
+  clientId: DROPBOX_CLIENT_ID,
+  clientSecret: DROPBOX_CLIENT_SECRET,
+})
 
 export const customerFiles: Controller = {
-  auth: async (_req, res) => {
+  authDropbox: async (_req, res) => {
     try {
+      const state = generateCSPRNG()
       // Redirect user to Dropbox authorization page
       const authUrl = `https://www.dropbox.com/oauth2/authorize?` + 
         `client_id=${DROPBOX_CLIENT_ID}&` +
-        `redirect_uri=${BASE_URL}/auth/dropbox/callback&` + 
+        `redirect_uri=${BASE_URL}${DROPBOX_REDIRECT_URI}&` + 
         `response_type=code&` +
-        `state=RANDOM_STATE`;
-      
-      res.redirect(authUrl);
-      // User should be redirected to Dropbox authorization page
+        `state=${state}`;
+      res.json({ auth_url: authUrl });
     } catch (err: Error | unknown) {
-      InternalServerError("auth", "dropbox", res, err);
+      InternalServerError("read", "dropbox authentication url", res, err);
     }
   },
 
-  authCallback: async (req, res) => {
+  authDropboxCallback: async (req, res) => {
     try {
       const { code, state } = req.query
+      console.log(code, state)
 
       if (!code || !state) {
         UnauthorizedRequestError("Code and state", res)
@@ -39,7 +49,7 @@ export const customerFiles: Controller = {
       const response = await axios.post('https://www.dropbox.com/oauth2/token', {
         code,
         grant_type: 'authorization_code',
-        redirect_uri: `${BASE_URL}/auth/dropbox/callback`,
+        redirect_uri: `${BASE_URL}${DROPBOX_REDIRECT_URI}`,
         client_id: DROPBOX_CLIENT_ID,
         client_secret: DROPBOX_CLIENT_SECRET,
       });
@@ -47,6 +57,8 @@ export const customerFiles: Controller = {
       const accessToken = response.data.access_token;
       res.json({ access_token: accessToken });
     } catch (err) {
+
+      console.log('err')
       ExternalServerError("Dropbox", res)
     }
   },
