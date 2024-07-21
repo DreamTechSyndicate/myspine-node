@@ -69,6 +69,7 @@ export const sendConsultationEmail = (customer: ICustomer) => {
         },
         html: `<p>Greetings POMS Doctor,<br/><br/>
           Great News!! You have received a new customer request for a second opinion. All of the information you need to begin has been provided below to allow you to decide if they are an ideal candidate for your second opinion.<br/><br/>
+          
           <b>Name: </b>${firstname} ${lastname}<br/>
           <b>Email: </b>${email}<br/>
           <b>Phone Number: </b>${phone_number}<br/>
@@ -85,19 +86,18 @@ export const sendConsultationEmail = (customer: ICustomer) => {
           <b>Pain Duration: </b>${pain_duration}<br/>
           <b>Pain Areas: </b>${painAreasString}<br/>
           <b>Pain Start Type: </b>${pain_start_type}<br/>
-          <b>Pain Start Causes: </b>${painStartCausesString}<br/><br/>
-
-          <b>Physical Therapy History: </b>${physical_therapy_history}<br/>
-          <b>Previous Spinal Surgery: </b>${previous_spinal_surgery}<br/>
-          <b>Offered Spinal Surgery: </b>${offered_spinal_surgery}<br/>
-          <b>Offered Procedure: </b>${offered_procedure}<br/>
-          <b>Offered By: </b>${offered_by}<br/><br/>
-
+          <b>Pain Start Causes: </b>${painStartCausesString}<br/>
           <b>Limb Weakness Numbness: </b>${limb_weakness_numbness}<br/>
           <b>Walking Unsteadiness: </b>${walking_unsteadiness}<br/>
           <b>Hand Object Manipulation Problem: </b>${hand_object_manipulation_problem}<br/><br/>
 
-          <b>Results Discussed: </b>${discussed_result}<br/>
+          <b>Physical Therapy History: </b>${physical_therapy_history}<br/>
+          <b>Offered Spinal Surgery: </b>${offered_spinal_surgery}<br/>
+          <b>Offered Procedure: </b>${offered_procedure}<br/>
+          <b>Offered By: </b>${offered_by}<br/><br/>
+          <b>Results Discussed: </b>${discussed_result}<br/><br/>
+      
+          <b>Previous Spinal Surgery: </b>${previous_spinal_surgery}<br/>
           <b>Surgery Type: </b>${surgery_type}<br/>
           <b>Surgery Date: </b>${surgery_date_time}<br/>
           <b>Surgeon: </b>${surgeon}<br/>
@@ -107,17 +107,19 @@ export const sendConsultationEmail = (customer: ICustomer) => {
           <b>Current Pain Medications: </b>${current_pain_medication}<br/>
           <b>Painful Activities: </b>${painfulActivitiesString}<br/>
           <b>Painful Leg Activities: </b>${painfulLegActivitiesString}<br/>
-          <b>Helpful Activities: </b>${helpfulActivitiesString}<br/>
+          <b>Helpful Activities: </b>${helpfulActivitiesString}<br/><br/>
+
           <b>Unoperational Due To Pain: </b>${unoperational_due_to_pain}<br/>
           <b>Physician Visit For Pain: </b>${physician_visit_for_pain}<br/>
           <b>Injection Procedures For Pain: </b>${injection_procedure_for_pain}<br/>
           <b>Injection Types: </b>${injectionTypesString}<br/>
           <b>Injection Relief: </b>${injection_relief}<br/>
           <b>Helpful Injections: </b>${helpful_injection}<br/>
-          <b>Injection Relief Duration: </b>${injection_relief_duration}<br/>
+          <b>Injection Relief Duration: </b>${injection_relief_duration}<br/><br/>
+
           <b>Medical Problems: </b>${medical_problem}<br/>
-          <b>Current Medications: </b>${current_medication}<br/><br/></p>
-        `
+          <b>Current Medications: </b>${current_medication}<br/><br/>
+        </p>`
       })
     }
   } catch (err) {
