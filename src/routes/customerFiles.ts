@@ -1,6 +1,5 @@
 import { Router } from 'express'
 import { customerFiles } from '../controllers/customerFiles'
-import { dropboxProxy } from '../middleware'
 
 const router = Router()
 

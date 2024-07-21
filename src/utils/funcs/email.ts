@@ -20,42 +20,42 @@ export const sendConsultationEmail = (customer: ICustomer) => {
         pain_degree,
         pain_duration,
         activity_level,
-        pain_area,
+        pain_areas,
         pain_start_type,
-        pain_start_cause,
-        physical_theray_history,
+        pain_start_causes,
+        physical_therapy_history,
         offered_spinal_surgery,
-        spine_imaging_type,
+        spine_imaging_types,
         previous_spinal_surgery,
         limb_weakness_numbness,
         walking_unsteadiness,
         offered_procedure,
         offered_by,
-        results_discussed,
+        discussed_result,
         surgery_type,
         surgery_date_time,
         surgeon,
-        hand_object_manipulation_problems,
-        past_pain_medications,
-        current_pain_medications,
+        hand_object_manipulation_problem,
+        past_pain_medication,
+        current_pain_medication,
         painful_activities,
         painful_leg_activities,
         helpful_activities,
         unoperational_due_to_pain,
         physician_visit_for_pain,
-        injection_procedures_for_pain,
+        injection_procedure_for_pain,
         injection_types,
         injection_relief,
-        helpful_injections,
+        helpful_injection,
         injection_relief_duration,
-        medical_problems,
-        current_medications
+        medical_problem,
+        current_medication
       } = customer
 
       const painSummaryString = parseAndCommaJoin(pain_summary)
-      const painAreaString = parseAndCommaJoin(pain_area)
-      const painStartCauseString = parseAndCommaJoin(pain_start_cause)
-      const spineImagingTypesString = parseAndCommaJoin(spine_imaging_type);
+      const painAreasString = parseAndCommaJoin(pain_areas)
+      const painStartCausesString = parseAndCommaJoin(pain_start_causes)
+      const spineImagingTypesString = parseAndCommaJoin(spine_imaging_types);
       const painfulActivitiesString = parseAndCommaJoin(painful_activities);
       const painfulLegActivitiesString = parseAndCommaJoin(painful_leg_activities)
       const helpfulActivitiesString = parseAndCommaJoin(helpful_activities)
@@ -64,55 +64,59 @@ export const sendConsultationEmail = (customer: ICustomer) => {
       sendEmail({
         mailType: MailTypes.APPT_REQUESTED,
         from: {
-          email: customer.email,
-          name: `${customer.firstname} ${customer.lastname}`,
-          id: customer.id
+          email: email,
+          name: `${firstname} ${lastname}`
         },
         html: `<p>Greetings POMS Doctor,<br/><br/>
           Great News!! You have received a new customer request for a second opinion. All of the information you need to begin has been provided below to allow you to decide if they are an ideal candidate for your second opinion.<br/><br/>
-          <b>Name :</b> ${firstname} ${lastname}<br/>
-          <b>Pain Summary :</b> ${painSummaryString}<br/>
-          <b>Email :</b> ${email}<br/>
-          <b>Phone Number :</b> ${phone_number}<br/>
-          <b>Age:</b> ${age}<br/>
-          <b>Sex:</b> ${sex}<br/>
-          <b>Height:</b> ${height}<br/>
-          <b>Weight:</b> ${weight}<br/>
-          <b>Occupation:</b> ${occupation}<br/>
-          <b>Acute Pain Type:</b> ${acute_pain_type}<br/>
-          <b>Pain Degree:</b> ${pain_degree}<br/>
-          <b>Pain Duration:</b> ${pain_duration}<br/>
-          <b>Activity Level :</b> ${activity_level}<br/>
-          <b>Pain Area :</b> ${painAreaString}<br/>
-          <b>Pain Start Type :</b> ${pain_start_type}<br/>
-          <b>Pain Start Cause :</b> ${painStartCauseString}<br/>
-          <b>Physical Therapy History :</b> ${physical_theray_history}<br/>
-          <b>Offered Spinal Surgery :</b> ${offered_spinal_surgery}<br/>
-          <b>Spine Imaging Types :</b> ${spineImagingTypesString}<br/>
-          <b>Previous Spinal Surgery :</b> ${previous_spinal_surgery}<br/>
-          <b>Limb Weakness Numbness :</b> ${limb_weakness_numbness}<br/>
-          <b>Walking Unsteadiness :</b> ${walking_unsteadiness}<br/>
-          <b>Offered Procedure :</b> ${offered_procedure}<br/>
-          <b>Offered By :</b> ${offered_by}<br/>
-          <b>Results Discussed :</b> ${results_discussed}<br/>
-          <b>Surgery Type :</b> ${surgery_type}<br/>
-          <b>Surgery Date :</b> ${surgery_date_time}<br/>
-          <b>Surgeon :</b> ${surgeon}<br/>
-          <b>Hand Object Manipulation Problems :</b> ${hand_object_manipulation_problems}<br/>
-          <b>Past Pain Medications :</b> ${past_pain_medications}<br/>
-          <b>Current Pain Medications :</b> ${current_pain_medications}<br/>
-          <b>Painful Activities :</b> ${painfulActivitiesString}<br/>
-          <b>Painful Leg Activities :</b> ${painfulLegActivitiesString}<br/>
-          <b>Helpful Activities :</b> ${helpfulActivitiesString}<br/>
-          <b>Unoperational Due To Pain :</b> ${unoperational_due_to_pain}<br/>
-          <b>Physician Visit For Pain :</b> ${physician_visit_for_pain}<br/>
-          <b>Injection Procedures For Pain :</b> ${injection_procedures_for_pain}<br/>
-          <b>Injection Types :</b> ${injectionTypesString}<br/>
-          <b>Injection Relief:</b> ${injection_relief}<br/>
-          <b>Helpful Injections:</b> ${helpful_injections}<br/>
-          <b>Injection Relief Duration:</b> ${injection_relief_duration}<br/>
-          <b>Medical Problems:</b> ${medical_problems}<br/>
-          <b>Current Medications:</b> ${current_medications}<br/><br/></p>
+          <b>Name: </b>${firstname} ${lastname}<br/>
+          <b>Email: </b>${email}<br/>
+          <b>Phone Number: </b>${phone_number}<br/>
+          <b>Age: </b>${age}<br/>
+          <b>Sex: </b>${sex}<br/>
+          <b>Height: </b>${height}<br/>
+          <b>Weight: </b>${weight}<br/>
+          <b>Occupation: </b>${occupation}<br/>
+          <b>Activity Level: </b>${activity_level}<br/><br/>
+
+          <b>Acute Pain Type: </b>${acute_pain_type}<br/>
+          <b>Pain Summary: </b>${painSummaryString}<br/>
+          <b>Pain Degree: </b>${pain_degree}<br/>
+          <b>Pain Duration: </b>${pain_duration}<br/>
+          <b>Pain Areas: </b>${painAreasString}<br/>
+          <b>Pain Start Type: </b>${pain_start_type}<br/>
+          <b>Pain Start Causes: </b>${painStartCausesString}<br/><br/>
+
+          <b>Physical Therapy History: </b>${physical_therapy_history}<br/>
+          <b>Previous Spinal Surgery: </b>${previous_spinal_surgery}<br/>
+          <b>Offered Spinal Surgery: </b>${offered_spinal_surgery}<br/>
+          <b>Offered Procedure: </b>${offered_procedure}<br/>
+          <b>Offered By: </b>${offered_by}<br/><br/>
+
+          <b>Limb Weakness Numbness: </b>${limb_weakness_numbness}<br/>
+          <b>Walking Unsteadiness: </b>${walking_unsteadiness}<br/>
+          <b>Hand Object Manipulation Problem: </b>${hand_object_manipulation_problem}<br/><br/>
+
+          <b>Results Discussed: </b>${discussed_result}<br/>
+          <b>Surgery Type: </b>${surgery_type}<br/>
+          <b>Surgery Date: </b>${surgery_date_time}<br/>
+          <b>Surgeon: </b>${surgeon}<br/>
+          <b>Spine Imaging Types: </b>${spineImagingTypesString}<br/><br/>
+
+          <b>Past Pain Medications: </b>${past_pain_medication}<br/>
+          <b>Current Pain Medications: </b>${current_pain_medication}<br/>
+          <b>Painful Activities: </b>${painfulActivitiesString}<br/>
+          <b>Painful Leg Activities: </b>${painfulLegActivitiesString}<br/>
+          <b>Helpful Activities: </b>${helpfulActivitiesString}<br/>
+          <b>Unoperational Due To Pain: </b>${unoperational_due_to_pain}<br/>
+          <b>Physician Visit For Pain: </b>${physician_visit_for_pain}<br/>
+          <b>Injection Procedures For Pain: </b>${injection_procedure_for_pain}<br/>
+          <b>Injection Types: </b>${injectionTypesString}<br/>
+          <b>Injection Relief: </b>${injection_relief}<br/>
+          <b>Helpful Injections: </b>${helpful_injection}<br/>
+          <b>Injection Relief Duration: </b>${injection_relief_duration}<br/>
+          <b>Medical Problems: </b>${medical_problem}<br/>
+          <b>Current Medications: </b>${current_medication}<br/><br/></p>
         `
       })
     }

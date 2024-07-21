@@ -14,7 +14,6 @@ const BASE_URL = process.env.BASE_URL
 const DROPBOX_CLIENT_ID = process.env.DROPBOX_CLIENT_ID
 const DROPBOX_CLIENT_SECRET = process.env.DROPBOX_CLIENT_SECRET
 const DROPBOX_REDIRECT_URI = process.env.DROPBOX_REDIRECT_URI
-const DROPBOX_SCOPE = process.env.DROPBOX_SCOPE
 
 const dropbox = new Dropbox({
   clientId: DROPBOX_CLIENT_ID,
@@ -57,7 +56,6 @@ export const customerFiles: Controller = {
       const accessToken = response.data.access_token;
       res.json({ access_token: accessToken });
     } catch (err) {
-
       console.log('err')
       ExternalServerError("Dropbox", res)
     }

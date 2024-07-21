@@ -38,54 +38,6 @@ export const customers: Controller = {
 
   postCustomer: async (req, res) => {
     try {
-      let {
-        firstname,
-        lastname,
-        email,
-        phone_number,
-        age,
-        sex,
-        height,
-        weight,
-        occupation,
-        acute_pain_type,
-        pain_summary,
-        pain_degree,
-        pain_duration,
-        activity_level,
-        pain_area,
-        pain_start_type,
-        pain_start_cause,
-        physical_theray_history,
-        offered_spinal_surgery,
-        spine_imaging_type,
-        previous_spinal_surgery,
-        limb_weakness_numbness,
-        walking_unsteadiness,
-        offered_procedure,
-        offered_by,
-        results_discussed,
-        surgery_type,
-        surgery_date_time,
-        surgeon,
-        hand_object_manipulation_problems,
-        past_pain_medications,
-        current_pain_medications,
-        painful_activities,
-        painful_leg_activities,
-        helpful_activities,
-        unoperational_due_to_pain,
-        physician_visit_for_pain,
-        injection_procedures_for_pain,
-        injection_types,
-        injection_relief,
-        helpful_injections,
-        injection_relief_duration,
-        medical_problems,
-        current_medications,
-        password
-      } = req.body
-
       const missingFields = containsMissingFields({
         payload: req.body,
         requiredFields: [
@@ -103,36 +55,36 @@ export const customers: Controller = {
           'pain_degree',
           'pain_duration',
           'activity_level',
-          'pain_area',
+          'pain_areas',
           'pain_start_type',
-          'pain_start_cause',
-          'physical_theray_history',
+          'pain_start_causes',
+          'physical_therapy_history',
           'offered_spinal_surgery',
-          'spine_imaging_type',
+          'spine_imaging_types',
           'previous_spinal_surgery',
           'limb_weakness_numbness',
           'walking_unsteadiness',
           'offered_procedure',
           'offered_by',
-          'results_discussed',
+          'discussed_result',
           'surgery_type',
           'surgery_date_time',
           'surgeon',
-          'hand_object_manipulation_problems',
-          'past_pain_medications',
-          'current_pain_medications',
+          'hand_object_manipulation_problem',
+          'past_pain_medication',
+          'current_pain_medication',
           'painful_activities',
           'painful_leg_activities',
           'helpful_activities',
           'unoperational_due_to_pain',
           'physician_visit_for_pain',
-          'injection_procedures_for_pain',
+          'injection_procedure_for_pain',
           'injection_types',
           'injection_relief',
-          'helpful_injections',
+          'helpful_injection',
           'injection_relief_duration',
-          'medical_problems',
-          'current_medications'
+          'medical_problem',
+          'current_medication'
         ]
       })
 
@@ -140,58 +92,58 @@ export const customers: Controller = {
         BadRequestError(missingFields, res) 
       }
 
-      const sanitizedEmail = sanitizeEmail(email)
+      const sanitizedEmail = sanitizeEmail(req.body.email)
 
-      const payload = {
-        firstname: capitalizeFirstLetter(firstname),
-        lastname: capitalizeFirstLetter(lastname),
+      const payload: Partial<ICustomer> = {
+        firstname: capitalizeFirstLetter(req.body.firstname),
+        lastname: capitalizeFirstLetter(req.body.lastname),
         email: sanitizedEmail,
-        phone_number,
-        age,
-        sex,
-        height,
-        weight,
-        occupation,
-        acute_pain_type,
-        pain_summary,
-        pain_degree,
-        pain_duration,
-        activity_level,
-        pain_area,
-        pain_start_type,
-        pain_start_cause,
-        physical_theray_history,
-        offered_spinal_surgery,
-        spine_imaging_type,
-        previous_spinal_surgery,
-        limb_weakness_numbness,
-        walking_unsteadiness,
-        offered_procedure,
-        offered_by,
-        results_discussed,
-        surgery_type,
-        surgery_date_time,
-        surgeon,
-        hand_object_manipulation_problems,
-        past_pain_medications,
-        current_pain_medications,
-        painful_activities,
-        painful_leg_activities,
-        helpful_activities,
-        unoperational_due_to_pain,
-        physician_visit_for_pain,
-        injection_procedures_for_pain,
-        injection_types,
-        injection_relief,
-        helpful_injections,
-        injection_relief_duration,
-        medical_problems,
-        current_medications
+        phone_number: req.body.phone_number,
+        age: req.body.age,
+        sex: req.body.sex,
+        height: req.body.height,
+        weight: req.body.weight,
+        occupation: req.body.occupation,
+        acute_pain_type: req.body.acute_pain_type,
+        pain_summary: req.body.pain_summary,
+        pain_degree: req.body.pain_degree,
+        pain_duration: req.body.pain_duration,
+        activity_level: req.body.activity_level,
+        pain_areas: req.body.pain_areas,
+        pain_start_type: req.body.pain_start_type,
+        pain_start_causes: req.body.pain_start_causes,
+        physical_therapy_history: req.body.physical_therapy_history,
+        offered_spinal_surgery: req.body.offered_spinal_surgery,
+        spine_imaging_types: req.body.spine_imaging_types,
+        previous_spinal_surgery: req.body.previous_spinal_surgery,
+        limb_weakness_numbness: req.body.limb_weakness_numbness,
+        walking_unsteadiness: req.body.walking_unsteadiness,
+        offered_procedure: req.body.offered_procedure,
+        offered_by: req.body.offered_by,
+        discussed_result: req.body.discussed_result,
+        surgery_type: req.body.surgery_type,
+        surgery_date_time: req.body.surgery_date_time,
+        surgeon: req.body.surgeon,
+        hand_object_manipulation_problem: req.body.hand_object_manipulation_problem,
+        past_pain_medication: req.body.past_pain_medication,
+        current_pain_medication: req.body.current_pain_medications,
+        painful_activities: req.body.painful_activities,
+        painful_leg_activities: req.body.painful_leg_activities,
+        helpful_activities: req.body.helpful_activities,
+        unoperational_due_to_pain: req.body.unoperational_due_to_pain,
+        physician_visit_for_pain: req.body.physician_visit_for_pain,
+        injection_procedure_for_pain: req.body.injection_procedure_for_pain,
+        injection_types: req.body.injection_types,
+        injection_relief: req.body.injection_relief,
+        helpful_injection: req.body.helpful_injection,
+        injection_relief_duration: req.body.injection_relief_duration,
+        medical_problem: req.body.medical_problem,
+        current_medication: req.body.current_medication
       }
 
       let customer;
 
-      const existingCustomer = await Customer.readByEmail(payload.email)
+      const existingCustomer = payload.email && await Customer.readByEmail(payload.email)
 
       if (existingCustomer) {        
         const userByEmail = await User.readByEmail(existingCustomer.email)
@@ -209,13 +161,13 @@ export const customers: Controller = {
       }
 
       if (!existingCustomer) {
-        if (!password) {
+        if (!req.body.password) {
           // New customer might not have an associated user_id yet
           customer = await Customer.create(payload)
         } else {
           // Customer can opt for a single-click registration
           // Given a password, customer will also create an account user with user_id
-          const hashedPass: string | undefined = await argon2.hash(password)
+          const hashedPass: string | undefined = await argon2.hash(req.body.password)
           !hashedPass && ExternalServerError("argon 2 hashing", res);
 
           const user = await User.create({ email: sanitizedEmail, password: hashedPass })
@@ -275,36 +227,36 @@ export const customers: Controller = {
           'pain_degree',
           'pain_duration',
           'activity_level',
-          'pain_area',
+          'pain_areas',
           'pain_start_type',
-          'pain_start_cause',
-          'physical_theray_history',
+          'pain_start_causes',
+          'physical_therapy_history',
           'offered_spinal_surgery',
-          'spine_imaging_type',
+          'spine_imaging_types',
           'previous_spinal_surgery',
           'limb_weakness_numbness',
           'walking_unsteadiness',
           'offered_procedure',
           'offered_by',
-          'results_discussed',
+          'discussed_result',
           'surgery_type',
           'surgery_date_time',
           'surgeon',
-          'hand_object_manipulation_problems',
-          'past_pain_medications',
-          'current_pain_medications',
+          'hand_object_manipulation_problem',
+          'past_pain_medication',
+          'current_pain_medication',
           'painful_activities',
           'painful_leg_activities',
           'helpful_activities',
           'unoperational_due_to_pain',
           'physician_visit_for_pain',
-          'injection_procedures_for_pain',
+          'injection_procedure_for_pain',
           'injection_types',
           'injection_relief',
-          'helpful_injections',
+          'helpful_injection',
           'injection_relief_duration',
-          'medical_problems',
-          'current_medications'
+          'medical_problem',
+          'current_medication'
         ]
       })
 
