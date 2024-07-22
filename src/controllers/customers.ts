@@ -64,12 +64,6 @@ export const customers: Controller = {
           'previous_spinal_surgery',
           'limb_weakness_numbness',
           'walking_unsteadiness',
-          'offered_procedure',
-          'offered_by',
-          'discussed_result',
-          'surgery_type',
-          'surgery_date_time',
-          'surgeon',
           'hand_object_manipulation_problem',
           'past_pain_medication',
           'current_pain_medication',
@@ -79,10 +73,7 @@ export const customers: Controller = {
           'unoperational_due_to_pain',
           'physician_visit_for_pain',
           'injection_procedure_for_pain',
-          'injection_types',
           'injection_relief',
-          'helpful_injection',
-          'injection_relief_duration',
           'medical_problem',
           'current_medication'
         ]
